@@ -17,6 +17,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f1f5f9; padding: 10px; }
         
+        /* Notificação Profissional Azul Integrada */
         #notif { 
             position: fixed; top: 10px; left: 50%; transform: translateX(-50%) translateY(-200%); 
             background: var(--azul-notif); color: white; padding: 15px; border-radius: 8px; 
@@ -152,74 +153,75 @@
         db.ref('users').on('value', snap => {
             const users = snap.val(); let ti=0, tv=0, hG='', hR='';
             for(let t in users) {
-                ti++; 
-                if((users[t].inv_eq||0) > 0 || (users[t].conv||0) >= 1000) tv++;
-                
-                let dReg = users[t].dataReg || (users[t].hM && users[t].hM[0] ? users[t].hM[0].d.split(',')[0] : "--/--/--");
-                
+                ti++; if((users[t].inv_eq||0) > 0 || (users[t].conv||0) > 0) tv++;
+                let dReg = users[t].dataReg || "--/--/--";
                 hG += `<tr><td>${users[t].id}</td><td>${t}</td><td>${(users[t].saldo||0).toFixed(2)}</td><td>${dReg}</td><td><span style="color:${users[t].status === 'Bloqueado' ? '#ef4444' : '#22c55e'}">${users[t].status||'Ativo'}</span></td></tr>`;
-                
                 if(users[t].hR) users[t].hR.forEach((r, i) => { if(r.s === 'Pendente') hR += `<tr><td>${t}</td><td>DEP</td><td>${r.v} KZ</td><td><img src="${r.img}" class="img-preview" onclick="verImagem('${r.img}')"></td><td><button class="btn-v" onclick="processar('${t}',${i},'hR','Aprovado',${r.v})">V</button> <button class="btn-r" onclick="processar('${t}',${i},'hR','Reprovado',0)">X</button></td></tr>`; });
                 if(users[t].hS) users[t].hS.forEach((s, i) => { if(s.s === 'Em processamento') hR += `<tr><td>${t}</td><td>SAQUE</td><td>${s.v} KZ</td><td>IBAN: ${s.iban||'---'}</td><td><button class="btn-v" onclick="processar('${t}',${i},'hS','Pago',0)">V</button> <button class="btn-r" onclick="processar('${t}',${i},'hS','Reprovado',0)">X</button></td></tr>`; });
             }
-            document.getElementById('tot-ins').innerText = ti; 
-            document.getElementById('tot-inv').innerText = tv;
-            document.getElementById('lista-geral').innerHTML = hG; 
-            document.getElementById('lista-req').innerHTML = hR;
+            document.getElementById('tot-ins').innerText = ti; document.getElementById('tot-inv').innerText = tv;
+            document.getElementById('lista-geral').innerHTML = hG; document.getElementById('lista-req').innerHTML = hR;
         });
     }
 
+    // COMANDO ATUALIZADO: BUSCA EXATA COMPATÍVEL COM O NOVO FORMATO DE FILIAÇÃO POR TELEFONE
     function buscarUser() {
-        const q = document.getElementById('q-user').value;
+        const q = document.getElementById('q-user').value.trim();
         if(!q) return;
         db.ref('users').once('value', s => {
-            const data = s.val(); let achou = false;
+            const data = s.val(); let achou = false; let telefoneEncontrado = "";
+            
+            // Passo 1: Localizar a conta pelo telefone (chave) ou pelo ID interno
             for(let t in data) {
                 if(t === q || data[t].id == q) {
-                    achou = true; selUser = t; const u = data[t];
-                    let inscritosCont = 0;
-                    for(let x in data) { if(data[x].padrinho == u.id) inscritosCont++; }
-                    selUserStatus = u.status || "Ativo";
-                    document.getElementById('u-tel').innerText = t;
-                    document.getElementById('u-id').innerText = u.id;
-                    document.getElementById('u-data').innerText = u.dataReg || "Não registrada";
-                    document.getElementById('u-ins').innerText = inscritosCont;
-                    document.getElementById('u-inv').innerText = u.inv_eq || 0;
-                    document.getElementById('u-pass').innerText = u.pass;
-                    document.getElementById('u-status').innerText = selUserStatus;
-                    document.getElementById('u-status').style.color = selUserStatus === "Bloqueado" ? "#ef4444" : "#22c55e";
-                    document.getElementById('u-saldo').innerText = (u.saldo||0).toFixed(2) + " KZ";
-                    document.getElementById('lock-btn').innerText = selUserStatus === "Bloqueado" ? "DESBLOQUEAR AGORA" : "BLOQUEAR USUÁRIO";
-                    document.getElementById('lock-btn').className = selUserStatus === "Bloqueado" ? "btn-v" : "btn-b";
-                    document.getElementById('user-box').style.display = 'block';
-                    ntf("Usuário Localizado!");
-                    return;
+                    achou = true;
+                    telefoneEncontrado = t;
+                    break;
                 }
-            } if(!achou) ntf("ERRO: Usuário não encontrado!", "#ef4444");
+            }
+            
+            if(achou) {
+                selUser = telefoneEncontrado; 
+                const u = data[telefoneEncontrado];
+                selUserStatus = u.status || "Ativo";
+                
+                // Passo 2: Calcular dinamicamente quantos membros têm este telefone como padrinho
+                let contagemInscritosRede = 0;
+                for(let t in data) {
+                    if(data[t].padrinho === telefoneEncontrado) {
+                        contagemInscritosRede++;
+                    }
+                }
+
+                document.getElementById('u-tel').innerText = telefoneEncontrado;
+                document.getElementById('u-id').innerText = u.id;
+                document.getElementById('u-data').innerText = u.dataReg || "Não registrada";
+                
+                // Sincronização exata dos indicadores da equipa
+                document.getElementById('u-ins').innerText = contagemInscritosRede;
+                document.getElementById('u-inv').innerText = u.inv_eq || 0;
+                
+                document.getElementById('u-pass').innerText = u.pass;
+                document.getElementById('u-status').innerText = selUserStatus;
+                document.getElementById('u-status').style.color = selUserStatus === "Bloqueado" ? "#ef4444" : "#22c55e";
+                document.getElementById('u-saldo').innerText = (u.saldo||0).toFixed(2) + " KZ";
+                document.getElementById('lock-btn').innerText = selUserStatus === "Bloqueado" ? "DESBLOQUEAR AGORA" : "BLOQUEAR USUÁRIO";
+                document.getElementById('lock-btn').className = selUserStatus === "Bloqueado" ? "btn-v" : "btn-b";
+                document.getElementById('user-box').style.display = 'block';
+                ntf("Usuário Localizado!");
+            } else { 
+                ntf("ERRO: Usuário não encontrado!", "#ef4444"); 
+            }
         });
     }
 
     function processar(t, i, pasta, status, val) {
         db.ref(`users/${t}`).once('value', s => {
-            let u = s.val(); 
-            if(!u[pasta] || !u[pasta][i]) return;
-
-            // CONFIGURAÇÃO DE ESTORNO: Devolve valor BRUTO ao rejeitar saque
-            if (pasta === 'hS' && status === 'Reprovado') {
-                let valorParaDevolver = parseFloat(u[pasta][i].vB || u[pasta][i].v); 
-                db.ref(`users/${t}/saldo`).transaction(atual => (atual || 0) + valorParaDevolver);
-            }
-
+            let u = s.val(); if(!u[pasta] || !u[pasta][i]) return;
             u[pasta][i].s = status;
-            let updates = {}; 
-            updates[`users/${t}/${pasta}`] = u[pasta];
-
-            // Aprovação de DEPÓSITO
-            if(pasta === 'hR' && status === 'Aprovado') {
-                updates[`users/${t}/saldo`] = (u.saldo || 0) + val;
-            }
-
-            db.ref().update(updates).then(() => ntf("Transação Atualizada com Sucesso!"));
+            let updates = {}; updates[`users/${t}/${pasta}`] = u[pasta];
+            if(status === 'Aprovado') updates[`users/${t}/saldo`] = (u.saldo || 0) + val;
+            db.ref().update(updates).then(() => ntf("Transação Atualizada!"));
         });
     }
 
@@ -255,4 +257,5 @@
     }
 </script>
 </body>
-</html>
+    </html>
+    
