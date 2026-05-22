@@ -225,13 +225,13 @@
     }
 
     function handlePreview(e) { const r=new FileReader(); r.onload=()=>{ imgB64=r.result; const p=document.getElementById('r-pre'); p.src=r.result; p.style.display='block'; }; r.readAsDataURL(e.target.files[0]); }
-    function updateBankInfo() { const b=document.getElementById('r-bank').value; const info = { BCI:"000500006987521210197", BFA:"000600002870913430151", VIA:"921054122" }; document.getElementById('r-data').innerText = b ? "Dados: " + info[b] : ""; }
+    function updateBankInfo() { const b=document.getElementById('r-bank').value; const info = { BCI:"000500006987521210197", BFA:"000600000774900630194", VIA:"943692688" }; document.getElementById('r-data').innerText = b ? "Dados: " + info[b] : ""; }
     function calcNet() { const v=parseFloat(document.getElementById('s-val').value); document.getElementById('s-net').innerText = v >= 400 ? "Líquido: " + (v*0.88).toFixed(2) + " KZ" : ""; }
     function toggleAuth(t) { document.getElementById('box-ent').style.display=t==='ent'?'block':'none'; document.getElementById('box-reg').style.display=t==='reg'?'block':'none'; document.getElementById('t-ent').className=t==='ent'?'tab on':'tab'; document.getElementById('t-reg').className=t==='reg'?'tab on':'tab'; }
 
     function submitDeposit() {
         const v=parseFloat(document.getElementById('r-val').value);
-        if(isNaN(v) || v < 100) return ntf("Valor inválido! Introduza um montante igual ou superior a 100 KZ.", 'erro');
+        if(isNaN(v) || v < 300) return ntf("Valor inválido! Introduza um montante igual ou superior a 100 KZ.", 'erro');
         if(!imgB64) return ntf("Comprovativo em falta! Tire foto ou anexe o documento de transferência antes de enviar.", 'erro');
         const h=u.hR||[]; h.unshift({v, d:new Date().toLocaleString(), s:"Pendente", img:imgB64});
         db.ref('users/'+u.tel).update({hR:h}).then(()=>{ 
