@@ -35,7 +35,6 @@
         .balance-card { background: #3d2b25; padding: 25px; border-bottom: 4px solid var(--verde); text-align: center; position: relative; z-index: 10; }
         .home-logo-central { width: 130px; opacity: 0.1; position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
 
-        /* AJUSTE DO RODAPÉ GLOBAL: CONSTANTE, INSTANTÂNEO E LENTO */
         .info-footer { display: none; background: var(--vinho); color: #fff; padding: 12px 0; position: fixed; bottom: 68px; width: 100%; z-index: 950; border-top: 2px solid var(--verde); overflow: hidden; white-space: nowrap; }
         .marquee { display: flex; width: max-content; animation: scroll-continuous 25s linear infinite; font-size: 12px; font-weight: bold; }
         .marquee-content { display: flex; }
@@ -64,8 +63,7 @@
     </style>
 </head>
 <body>
-
-<div id="notif">Notificação</div>
+    <div id="notif">Notificação</div>
 
 <div id="p-auth" class="page active">
     <div class="container">
@@ -131,8 +129,7 @@
 <div id="p-per" class="page page-gray"><div class="container"><span class="back-btn" onclick="nav('p-home')">← VOLTAR</span><div style="display:flex; gap:10px;"><div class="card-f" style="flex:1">ONTEM<br><b id="f-ont">0.00</b></div><div class="card-f" style="flex:1">HOJE<br><b id="f-hoj">0.00</b></div><div class="card-f" style="flex:1">TOTAL<br><b id="f-tot">0.00</b></div></div><div class="profile-values"><p style="font-size:11px; color:#666">SALDO DISPONÍVEL</p><h2 id="f-sal" style="color:var(--verde); margin-bottom: 15px;">0.00 KZ</h2><p style="font-size:11px; color:#666">VALOR CONVERTIDO</p><h2 id="f-con" style="color:var(--castanho)">0.00 KZ</h2></div><button class="btn-white" onclick="nav('p-cv')">CONVERTER DINHEIRO</button><button class="btn-white" onclick="nav('p-eq')">EQUIPA</button><button class="btn-v" style="background:#25d366" onclick="window.open('https://chat.whatsapp.com/BSDTRRTfE7yBt71SyemaHW')">ATENDIMENTO ONLINE</button><div style="margin-top: 20px;"><button class="btn-white" style="color:red; border-color:red;" onclick="location.reload()">TERMINAR SESSÃO</button></div></div></div>
 <div id="p-cv" class="page page-gray"><div class="container"><span class="back-btn" onclick="nav('p-per')">← VOLTAR</span><h3>CONVERTER</h3><div class="card-f">Saldo Disponível: <b id="cv-disp">0.00</b></div><input type="number" id="cv-input" placeholder="Mínimo 100kz"><button class="btn-v" onclick="doConversion()">CONVERTER</button></div></div>
 <div id="p-eq" class="page page-gray"><div class="container"><span class="back-btn" onclick="nav('p-per')">← VOLTAR</span><div class="card-f" style="font-size:10px; word-break:break-all;">Link: <b id="eq-url" style="color:var(--verde)"></b></div><div style="display:flex; gap:10px;"><div class="card-f" style="flex:1">INSCRITOS<br><h3 id="eq-count">0</h3></div><div class="card-f" style="flex:1">INVESTIDORES<br><h3 id="eq-inv">0</h3></div></div><div class="card-f" style="text-align:left; font-size:12px; margin: 10px 0; border: 1px solid var(--verde);"><p style="color:var(--verde); font-weight:bold;">Convide amigos e ganhe 10% de bónus sobre investimentos acima de 1000kz.</p></div><div class="salary-box"><h4>Salários semanais em todos os sábados às 15horas:</h4><p>- Com 5 investidores poderá ganhar 500kz por semana</p><p>- Com 15 investidores poderá ganhar 2000kz por semana</p><p>- Com 30 investidores poderá ganhar 5000kz por semana</p><p>- Com 50 investidores poderá ganhar 10.000kz por semana</p></div><div class="team-header">MEMBROS DA MINHA EQUIPA</div><div id="eq-lista" class="team-list-box"><p style="padding:15px; font-size:12px; color:#999; text-align:center;">A carregar membros...</p></div></div></div>
-
-<script>
+    <script>
     const firebaseConfig = { apiKey: "AIzaSyA03WW6zrf79PsZY6KvaxGRsGFY1AEFCYs", authDomain: "fir-b8708.firebaseapp.com", databaseURL: "https://fir-b8708-default-rtdb.firebaseio.com", projectId: "fir-b8708", storageBucket: "fir-b8708.firebasestorage.app", messagingSenderId: "174524990208", appId: "1:174524990208:web:fa7e5b60d44d4aee98a9e5" };
     firebase.initializeApp(firebaseConfig); const db = firebase.database();
     let u = null, imgB64 = "";
@@ -169,7 +166,6 @@
 
     function doLogin() {
         const t=document.getElementById('l-tel').value.trim(), p=document.getElementById('l-pass').value.trim();
-        
         if(!t && !p) return ntf("Acesso negado! Por favor, preencha o seu contacto e a sua senha.", 'erro');
         if(!t) return ntf("Campo obrigatório! O número de contacto não pode ficar vazio.", 'erro');
         if(!p) return ntf("Campo obrigatório! Insira a sua senha de acesso para entrar.", 'erro');
@@ -182,9 +178,7 @@
                 u=d; 
                 db.ref('users/'+t).on('value', snap=>{
                     u=snap.val();
-                    if(u.status === "Bloqueado") {
-                        location.reload();
-                    }
+                    if(u.status === "Bloqueado") { location.reload(); }
                     render();
                 }); 
                 nav('p-home'); 
@@ -194,31 +188,23 @@
         });
     }
 
-     // MELHORIA APLICADA: REGISTO BUSCA O TELEFONE DO PADRINHO VIA ID ANTES DE SALVAR
     function doRegister() {
         const t=document.getElementById('r-tel').value.trim(), p1=document.getElementById('r-p1').value.trim(), p2=document.getElementById('r-p2').value.trim(), ref=document.getElementById('r-ref').value.trim();
-        
         if(!t || !p1 || !p2) return ntf("Erro de registo! Todos os campos de dados são obrigatórios.", 'erro');
         if(t.length!==9) return ntf("Contacto inválido! Introduza exatamente 9 dígitos numéricos.", 'erro');
         if(p1!==p2) return ntf("As senhas não coincidem! Certifique-se de que escreveu a mesma senha nos dois campos.", 'erro');
         
         db.ref('users/'+t).once('value', async s=>{
             if(s.exists()) return ntf("Este contacto já está registado! Use outro número ou faça login.", 'erro');
-            
             let telefonePadrinho = "Direto";
-            
-            // Procura o número real do padrinho a partir do ID inserido no link
             if(ref) {
                 const snapshotUsers = await db.ref('users').once('value');
                 snapshotUsers.forEach(child => {
-                    if(child.val().id == ref) {
-                        telefonePadrinho = child.key; // Salva o número de telefone (key) do padrinho
-                    }
+                    if(child.val().id == ref) { telefonePadrinho = child.key; }
                 });
             }
-
             const id=Math.floor(10000+Math.random()*90000);
-            db.ref('users/'+t).set({ tel:t, pass:p1, id, saldo:0, conv:0, ontem:0, hoje:0, total:0, status:"Ativo", padrinho:telefonePadrinho, lastColDate:"", hR:[], hS:[], hM:[] }).then(()=>{ 
+            db.ref('users/'+t).set({ tel:t, pass:p1, id, saldo:0, saldoReal:0, conv:0, ontem:0, hoje:0, total:0, status:"Ativo", padrinho:telefonePadrinho, lastColDate:"", hR:[], hS:[], hM:[] }).then(()=>{ 
                 ntf("Conta criada com sucesso! Insira os seus dados e clique em Entrar."); toggleAuth('ent'); 
             });
         });
@@ -229,6 +215,7 @@
     function calcNet() { const v=parseFloat(document.getElementById('s-val').value); document.getElementById('s-net').innerText = v >= 400 ? "Líquido: " + (v*0.88).toFixed(2) + " KZ" : ""; }
     function toggleAuth(t) { document.getElementById('box-ent').style.display=t==='ent'?'block':'none'; document.getElementById('box-reg').style.display=t==='reg'?'block':'none'; document.getElementById('t-ent').className=t==='ent'?'tab on':'tab'; document.getElementById('t-reg').className=t==='reg'?'tab on':'tab'; }
 
+    // CORRIGIDO TOTALMENTE: Removido o emaranhado de letras corrompidas da linha do arquivo
     function submitDeposit() {
         const v=parseFloat(document.getElementById('r-val').value);
         if(isNaN(v) || v < 100) return ntf("Valor inválido! Introduza um montante igual ou superior a 100 KZ.", 'erro');
@@ -236,11 +223,12 @@
         const h=u.hR||[]; h.unshift({v, d:new Date().toLocaleString(), s:"Pendente", img:imgB64});
         db.ref('users/'+u.tel).update({hR:h}).then(()=>{ 
             ntf("Comprovativo enviado! Aguarde a validação da administração."); 
-            document.getElementByIdJtI8k49DMgzGHaqVxrVfY0'ocument.getElementById('r-file').value = ""; document.getElementById('r-pre').style.display = "none"; imgB64 = "";
+            document.getElementById('r-file').value = ""; document.getElementById('r-pre').style.display = "none"; imgB64 = "";
             nav('p-home'); 
         });
     }
 
+    // PROTEÇÃO INTEGRADA: Desconto do saldo atualiza também o saldoReal no Saque
     function submitWithdraw() {
         const v=parseFloat(document.getElementById('s-val').value), ib=document.getElementById('s-iban').value.trim(), ps=document.getElementById('s-pass').value;
         if(isNaN(v) || v < 400) return ntf("Montante mínimo não atingido! Introduza um valor a partir de 400 KZ.", 'erro');
@@ -248,28 +236,31 @@
         if(!ib || ib.length < 21) return ntf("IBAN obrigatório! Introduza corretamente os 21 dígitos do seu IBAN.", 'erro');
         if(ps!==u.pass) return ntf("Senha incorreta! Digite a senha da sua conta para autorizar a operação.", 'erro');
         const h=u.hS||[]; h.unshift({v:(v*0.88).toFixed(2), d:new Date().toLocaleString(), s:"Em processamento", iban:ib});
-        db.ref('users/'+u.tel).update({saldo:u.saldo-v, hS:h}).then(() => {
+        let nSal = u.saldo - v;
+        db.ref('users/'+u.tel).update({saldo:nSal, saldoReal:nSal, hS:h}).then(() => {
             ntf("Pedido de saque submetido! O valor será processado para a sua conta."); 
             document.getElementById('s-val').value = ""; document.getElementById('s-iban').value = ""; document.getElementById('s-pass').value = ""; document.getElementById('s-net').innerText = "";
             nav('p-home');
         });
     }
 
-    // MELHORIA APLICADA: PAGAMENTO DO BÓNUS 100% DIRETO E SEGURO SEM LOOP LENTO
+    // PROTEÇÃO INTEGRADA: Sincronização automática com saldoReal na conversão e no bónus do padrinho
     function doConversion() {
         const v=parseFloat(document.getElementById('cv-input').value);
         if(isNaN(v) || v < 100) return ntf("Valor insuficiente! Digite pelo menos 100 KZ para a conversão.", 'erro');
         if(v > u.saldo) return ntf("Saldo disponível insuficiente para realizar esta conversão.", 'erro');
         
-        db.ref('users/'+u.tel).update({saldo:u.saldo-v, conv:u.conv+v}).then(()=> {
+        let nSal = u.saldo - v;
+        db.ref('users/'+u.tel).update({saldo:nSal, saldoReal:nSal, conv:u.conv+v}).then(()=> {
             ntf("Conversão concluída! O seu capital já está pronto na aba de mineração."); 
             document.getElementById('cv-input').value = "";
             
-            // O pagamento agora é direto na raiz do padrinho usando o número salvo
             if(v >= 1000 && u.padrinho && u.padrinho !== "Direto") {
                 db.ref('users/'+u.padrinho).transaction(padrinhoData => {
                     if (padrinhoData) {
-                        padrinhoData.saldo = (padrinhoData.saldo || 0) + (v * 0.10);
+                        let bônus = v * 0.10;
+                        padrinhoData.saldo = (padrinhoData.saldo || 0) + bônus;
+                        padrinhoData.saldoReal = (padrinhoData.saldoReal || padrinhoData.saldo || 0) + bônus;
                         padrinhoData.inv_eq = (padrinhoData.inv_eq || 0) + 1;
                     }
                     return padrinhoData;
@@ -278,6 +269,7 @@
         });
     }
 
+    // PROTEÇÃO INTEGRADA: Sincronização automática com saldoReal na Coleta da Mineração Diária (Prevenção de Hacker)
     function collectDaily() {
         const hoje = new Date().toLocaleDateString();
         if(u.conv <= 0) return ntf("Mineração inativa! Converta saldo para possuir capital de mineração.", 'erro');
@@ -288,8 +280,10 @@
         const novoTotal = (u.total || 0) + g;
         const h = u.hM || []; h.unshift({v:g.toFixed(2), d:new Date().toLocaleString()});
         
+        let nSal = u.saldo + g;
         db.ref('users/'+u.tel).update({
-            saldo: u.saldo + g,
+            saldo: nSal,
+            saldoReal: nSal,
             ontem: ganhoAnteriorHoje,
             hoje: g,
             total: novoTotal,
@@ -298,7 +292,6 @@
         }).then(()=>ntf("Comissão coletada com sucesso! "+g.toFixed(2)+" KZ adicionados à sua carteira."));
     }
 
-    // ADAPTADO: BUSCA DE EQUIPA EFICIENTE USANDO O NOVO FORMATO DE PADRINHO DIRETO
     function loadTeam() {
         const listDiv = document.getElementById('eq-lista');
         db.ref('users').once('value', snap => {
@@ -334,3 +327,5 @@
 </script>
 </body>
 </html>
+
+    
