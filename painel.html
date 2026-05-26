@@ -52,6 +52,11 @@
         .grid-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
         .equipa-box { display: flex; justify-content: space-between; background: #0f172a; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid var(--azul-notif); }
         .date-badge { font-size: 10px; background: #334155; padding: 3px 8px; border-radius: 5px; color: #60a5fa; font-weight: bold; }
+        
+        /* ESTILOS EXCLUSIVOS DA NOVA ÁREA DE PRESENÇA */
+        .flex-filtros { display: flex; gap: 8px; margin-bottom: 8px; }
+        .btn-filtro { flex: 1; padding: 10px; background: #334155; border-radius: 6px; color: #94a3b8; font-size: 10px; }
+        .btn-filtro.active-f { background: var(--azul-notif); color: white; }
     </style>
 </head>
 <body>
@@ -69,11 +74,44 @@
             <button class="btn-b" onclick="verificarAcesso()">AUTENTICAR</button>
         </div>
     </div>
-        <div id="main-admin" style="display: none;">
+    
+    <div id="main-admin" style="display: none;">
         <div class="card" style="display: flex; justify-content: space-around; text-align: center; border-top-color: var(--azul-notif); gap: 5px;">
             <div>Inscritos<br><h2 id="tot-ins" style="color: var(--azul-notif); font-size: 20px;">0</h2></div>
             <div>Investidores<br><h2 id="tot-inv" style="color: var(--verde); font-size: 20px;">0</h2></div>
             <div>Abaixo 1000<br><h2 id="tot-baixo" style="color: var(--laranja); font-size: 20px;">0</h2></div>
+        </div>
+
+        <div class="card" style="border-top-color: var(--ouro);">
+            <h4 style="color: var(--ouro); margin-bottom: 10px;">Controlo de Presenças (Lista de Investidores)</h4>
+            
+            <div class="flex-filtros">
+                <button id="f-btn-abaixo" class="btn-filtro active-f" onclick="mudarFiltroPresenca('abaixo')">Investimento Abaixo 1000</button>
+                <button id="f-btn-superior" class="btn-filtro" onclick="mudarFiltroPresenca('superior')">Investimento Superior (>=1000)</button>
+            </div>
+
+            <input type="text" id="pesquisa-presenca" placeholder="Pesquisar por ID ou Contacto na lista..." oninput="filtrarTabelaPresenca()">
+            
+            <div class="grid-actions" style="margin-bottom: 10px;">
+                <button class="btn-v" onclick="presencaColetiva(true)">Marcar Presença Coletiva</button>
+                <button class="btn-r" onclick="presencaColetiva(false)">Desmarcar Coletiva</button>
+            </div>
+
+            <div class="table-container" style="max-height: 300px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Contacto</th>
+                            <th>Investimento</th>
+                            <th>Data Presença</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-presencas-dinamica">
+                        </tbody>
+                </table>
+            </div>
         </div>
 
         <div class="card">
@@ -124,12 +162,16 @@
                 </table>
             </div>
         </div>
-      </div>
+    </div>
     <script>
     const firebaseConfig = { apiKey: "AIzaSyA03WW6zrf79PsZY6KvaxGRsGFY1AEFCYs", authDomain: "fir-b8708.firebaseapp.com", databaseURL: "https://fir-b8708-default-rtdb.firebaseio.com", projectId: "fir-b8708", storageBucket: "fir-b8708.firebasestorage.app", messagingSenderId: "174524990208", appId: "1:174524990208:web:fa7e5b60d44d4aee98a9e5" };
     firebase.initializeApp(firebaseConfig); const db = firebase.database(); 
     let selUser = null;
     let selUserStatus = "";
+    
+    // Variável de controlo para a nova secção
+    let filtroPresencaAtual = "abaixo"; 
+    let cacheUsuariosLista = {};
 
     function ntf(msg, color = "#3b82f6") { 
         const n = document.getElementById('notif'); 
@@ -153,28 +195,23 @@
         }
     }
 
-    // LÓGICA DE CONTAGEM ATUALIZADA: Separação estrita de investidores >= 1000 e < 1000
     function carregarDados() {
         db.ref('users').on('value', snap => {
-            const users = snap.val(); let ti=0, tv=0, tb=0, hG='', hR='';
+            const users = snap.val() || {}; 
+            cacheUsuariosLista = users; // Salva na memória global para buscas e ações coletivas rápidos
+            
+            let ti=0, tv=0, tb=0, hG='', hR='';
             for(let t in users) {
                 ti++; 
-                
                 let temInvEq = (users[t].inv_eq || 0) > 0;
                 let temAlgumHistoricoAtivo = false;
                 
-                // Verifica se o utilizador já teve algum depósito aprovado no histórico dele
                 if(users[t].hR) {
                     users[t].hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; });
                 }
 
-                if(temInvEq) {
-                    // Investidores com 1000 KZ ou mais
-                    tv++;
-                } else if(temAlgumHistoricoAtivo || (users[t].conv || 0) > 0) {
-                    // Investiram ou ativaram algo, mas ficou abaixo do limite mínimo de 1000 KZ
-                    tb++;
-                }
+                if(temInvEq) { tv++; } 
+                else if(temAlgumHistoricoAtivo || (users[t].conv || 0) > 0) { tb++; }
                 
                 let dReg = users[t].dataReg || "--/--/--";
                 let vStatus = users[t].status || 'Ativo';
@@ -194,70 +231,138 @@
             }
             document.getElementById('tot-ins').innerText = ti; 
             document.getElementById('tot-inv').innerText = tv;
-            document.getElementById('tot-baixo').innerText = tb; // Atualiza o novo contador no DOM
+            document.getElementById('tot-baixo').innerText = tb; 
             document.getElementById('lista-geral').innerHTML = hG; 
             document.getElementById('lista-req').innerHTML = hR;
+            
+            // Renderiza a nova tabela de presenças baseada no filtro selecionado
+            renderizarTabelaPresenca();
         });
     }
 
+    // NOVAS FUNÇÕES: IMPLEMENTAÇÃO DO SISTEMA DE PRESENÇAS
+    function mudarFiltroPresenca(tipo) {
+        filtroPresencaAtual = tipo;
+        document.getElementById('f-btn-abaixo').className = tipo === 'abaixo' ? 'btn-filtro active-f' : 'btn-filtro';
+        document.getElementById('f-btn-superior').className = tipo === 'superior' ? 'btn-filtro active-f' : 'btn-filtro';
+        renderizarTabelaPresenca();
+    }
+
+    function renderizarTabelaPresenca() {
+        let html = '';
+        const termoPesquisa = document.getElementById('pesquisa-presenca').value.trim().toLowerCase();
+
+        for (let t in cacheUsuariosLista) {
+            const u = cacheUsuariosLista[t];
+            let temInvEq = (u.inv_eq || 0) > 0;
+            let temAlgumHistoricoAtivo = false;
+            if(u.hR) { u.hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; }); }
+
+            let pertenceAoFiltro = false;
+            let tipoInvestimento = "0.00 KZ";
+
+            if (filtroPresencaAtual === 'superior' && temInvEq) {
+                pertenceAoFiltro = true;
+                tipoInvestimento = ">= 1000 KZ";
+            } else if (filtroPresencaAtual === 'abaixo' && (temAlgumHistoricoAtivo || (u.conv || 0) > 0) && !temInvEq) {
+                pertenceAoFiltro = true;
+                tipoInvestimento = "< 1000 KZ";
+            }
+
+            if (pertenceAoFiltro) {
+                const idStr = String(u.id || '');
+                const telStr = String(t || '');
+
+                // Aplica a filtragem por ID ou Contacto caso haja texto inserido
+                if (!termoPesquisa || idStr.toLowerCase().includes(termoPesquisa) || telStr.toLowerCase().includes(termoPesquisa)) {
+                    let dataPresenca = u.dataPresenca || "Nenhuma";
+                    let btnAcao = u.dataPresenca 
+                        ? `<button class="btn-r" style="padding:6px; margin:0;" onclick="marcarIndividual('${t}', false)">Desmarcar</button>` 
+                        : `<button class="btn-v" style="padding:6px; margin:0;" onclick="marcarIndividual('${t}', true)">Marcar</button>`;
+
+                    html += `<tr>
+                        <td><b>${u.id}</b></td>
+                        <td>${t}</td>
+                        <td><span style="color:${filtroPresencaAtual==='superior'?'#22c55e':'#f97316'}">${tipoInvestimento}</span></td>
+                        <td><span class="date-badge" style="background:${u.dataPresenca?'#15803d':'#334155'}; color:white;">${dataPresenca}</span></td>
+                        <td>${btnAcao}</td>
+                    </tr>`;
+                }
+            }
+        }
+        document.getElementById('lista-presencas-dinamica').innerHTML = html || `<tr><td colspan="5" style="text-align:center; color:#64748b;">Nenhum usuário encontrado neste grupo.</td></tr>`;
+    }
+
+    function filtrarTabelaPresenca() {
+        renderizarTabelaPresenca();
+    }
+
+    function marcarIndividual(telefone, status) {
+        let dataValor = status ? new Date().toLocaleString('pt-AO') : null;
+        db.ref(`users/${telefone}`).update({ dataPresenca: dataValor }).then(() => {
+            ntf(status ? "Presença marcada!" : "Presença removida!", status ? "#22c55e" : "#ef4444");
+        });
+    }
+
+    function presencaColetiva(status) {
+        let textoConfirmacao = status ? "Deseja MARCAR a presença de TODOS do grupo selecionado?" : "Deseja REMOVER a presença de TODOS do grupo selecionado?";
+        if (!confirm(textoConfirmacao)) return;
+
+        let dataValor = status ? new Date().toLocaleString('pt-AO') : null;
+        let updates = {};
+        let totalModificados = 0;
+
+        for (let t in cacheUsuariosLista) {
+            const u = cacheUsuariosLista[t];
+            let temInvEq = (u.inv_eq || 0) > 0;
+            let temAlgumHistoricoAtivo = false;
+            if(u.hR) { u.hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; }); }
+
+            let pertenceAoFiltro = false;
+            if (filtroPresencaAtual === 'superior' && temInvEq) pertenceAoFiltro = true;
+            if (filtroPresencaAtual === 'abaixo' && (temAlgumHistoricoAtivo || (u.conv || 0) > 0) && !temInvEq) pertenceAoFiltro = true;
+
+            if (pertenceAoFiltro) {
+                updates[`users/${t}/dataPresenca`] = dataValor;
+                totalModificados++;
+            }
+        }
+
+        if (totalModificados > 0) {
+            db.ref().update(updates).then(() => {
+                ntf(`Ação coletiva aplicada em ${totalModificados} contas!`, status ? "#22c55e" : "#ef4444");
+            });
+        } else {
+            ntf("Nenhum usuário no grupo para modificar.", "#f97316");
+        }
+    }
+
+    // MANUTENÇÃO INTEGRAL DAS FUNÇÕES EXISTENTES
     function buscarUser() {
         const q = document.getElementById('q-user').value.trim();
         if(!q) return;
         db.ref('users').once('value', s => {
             const data = s.val(); let achou = false; let telefoneEncontrado = "";
-            
-            for(let t in data) {
-                if(t === q || data[t].id == q) {
-                    achou = true;
-                    telefoneEncontrado = t;
-                    break;
-                }
-            }
+            for(let t in data) { if(t === q || data[t].id == q) { achou = true; telefoneEncontrado = t; break; } }
             
             if(achou) {
-                selUser = telefoneEncontrado; 
-                const u = data[telefoneEncontrado];
-                selUserStatus = u.status || "Ativo";
-                let isVerificado = u.verificado || false;
-                
-                let contagemInscritosRede = 0;
-                for(let t in data) {
-                    if(data[t].padrinho === telefoneEncontrado) {
-                        contagemInscritosRede++;
-                    }
-                }
-
-                document.getElementById('u-tel').innerText = telefoneEncontrado;
-                document.getElementById('u-id').innerText = u.id;
-                document.getElementById('u-data').innerText = u.dataReg || "Não registrada";
-                
-                document.getElementById('u-ins').innerText = contagemInscritosRede;
-                document.getElementById('u-inv').innerText = u.inv_eq || 0; 
-                
-                document.getElementById('u-pass').innerText = u.pass;
-                document.getElementById('u-status').innerText = selUserStatus;
-                document.getElementById('u-status').style.color = selUserStatus === "Bloqueado" ? "#ef4444" : "#22c55e";
-                
-                document.getElementById('u-verif').innerText = isVerificado ? "SIM (Membro Ativo)" : "NÃO";
-                document.getElementById('u-verif').style.color = isVerificado ? "#eab308" : "#94a3b8";
-                
+                selUser = telefoneEncontrado; const u = data[telefoneEncontrado]; selUserStatus = u.status || "Ativo"; let isVerificado = u.verificado || false;
+                let contagemInscritosRede = 0; for(let t in data) { if(data[t].padrinho === telefoneEncontrado) { contagemInscritosRede++; } }
+                document.getElementById('u-tel').innerText = telefoneEncontrado; document.getElementById('u-id').innerText = u.id; document.getElementById('u-data').innerText = u.dataReg || "Não registrada";
+                document.getElementById('u-ins').innerText = contagemInscritosRede; document.getElementById('u-inv').innerText = u.inv_eq || 0; 
+                document.getElementById('u-pass').innerText = u.pass; document.getElementById('u-status').innerText = selUserStatus; document.getElementById('u-status').style.color = selUserStatus === "Bloqueado" ? "#ef4444" : "#22c55e";
+                document.getElementById('u-verif').innerText = isVerificado ? "SIM (Membro Ativo)" : "NÃO"; document.getElementById('u-verif').style.color = isVerificado ? "#eab308" : "#94a3b8";
                 document.getElementById('u-saldo').innerText = (u.saldo||0).toFixed(2) + " KZ";
                 document.getElementById('lock-btn').innerText = selUserStatus === "Bloqueado" ? "DESBLOQUEAR AGORA" : "BLOQUEAR USUÁRIO";
                 document.getElementById('lock-btn').className = selUserStatus === "Bloqueado" ? "btn-v" : "btn-b";
-                document.getElementById('user-box').style.display = 'block';
-                ntf("Usuário Localizado!");
-            } else { 
-                ntf("ERRO: Usuário não encontrado!", "#ef4444"); 
-            }
+                document.getElementById('user-box').style.display = 'block'; ntf("Usuário Localizado!");
+            } else { ntf("ERRO: Usuário não encontrado!", "#ef4444"); }
         });
     }
 
     function alterarVerificacao(estado) {
         if(!selUser) return;
-        db.ref(`users/${selUser}`).update({ verificado: estado }).then(() => {
-            ntf(estado ? "Selo Participativo Concedido!" : "Selo Participativo Removido!", estado ? "#eab308" : "#64748b");
-            buscarUser();
-        });
+        db.ref(`users/${selUser}`).update({ verificado: estado }).then(() => { ntf(estado ? "Selo Participativo Concedido!" : "Selo Participativo Removido!", estado ? "#eab308" : "#64748b"); buscarUser(); });
     }
 
     function processar(t, i, pasta, status, val) {
@@ -271,37 +376,13 @@
     }
 
     function alterarSaldo(tipo) {
-        let v = parseFloat(prompt("Digite o valor para alterar o saldo:")); 
-        if(isNaN(v)) return;
-        db.ref(`users/${selUser}/saldo`).transaction(atual => (tipo === 'add' ? (atual || 0) + v : (atual || 0) - v)).then(() => { 
-            ntf("Saldo Modificado com Sucesso!"); 
-            buscarUser(); 
-        });
+        let v = parseFloat(prompt("Digite o valor para alterar o saldo:")); if(isNaN(v)) return;
+        db.ref(`users/${selUser}/saldo`).transaction(atual => (tipo === 'add' ? (atual || 0) + v : (atual || 0) - v)).then(() => { ntf("Saldo Modificado com Sucesso!"); buscarUser(); });
     }
 
-    function mudarSenha() { 
-        let p = prompt("Defina a nova senha:"); 
-        if(p) db.ref(`users/${selUser}`).update({pass:p}).then(()=>{ ntf("Nova Senha Configurada!"); buscarUser(); }); 
-    }
-    
-    function toggleBloqueio() {
-        let novoStatus = selUserStatus === "Bloqueado" ? "Ativo" : "Bloqueado";
-        db.ref(`users/${selUser}`).update({status: novoStatus}).then(()=>{ 
-            ntf("Acesso do Usuário Atualizado!"); 
-            buscarUser(); 
-        });
-    }
-
-    function deletar() { 
-        if(confirm("ATENÇÃO: Deseja apagar esta conta para sempre?")) {
-            db.ref(`users/${selUser}`).remove().then(()=>{
-                document.getElementById('user-box').style.display='none'; 
-                ntf("Conta Removida do Banco de Dados!");
-            }); 
-        }
-    }
+    function mudarSenha() { let p = prompt("Defina a nova senha:"); if(p) db.ref(`users/${selUser}`).update({pass:p}).then(()=>{ ntf("Nova Senha Configurada!"); buscarUser(); }); }
+    function toggleBloqueio() { let novoStatus = selUserStatus === "Bloqueado" ? "Ativo" : "Bloqueado"; db.ref(`users/${selUser}`).update({status: novoStatus}).then(()=>{ ntf("Acesso do Usuário Atualizado!"); buscarUser(); }); }
+    function deletar() { if(confirm("ATENÇÃO: Deseja apagar esta conta para sempre?")) { db.ref(`users/${selUser}`).remove().then(()=>{ document.getElementById('user-box').style.display='none'; ntf("Conta Removida do Banco de Dados!"); }); } }
 </script>
 </body>
 </html>
-
-                                                                                                              
