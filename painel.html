@@ -24,10 +24,22 @@
             background: var(--azul-notif); color: white; padding: 15px; border-radius: 8px; 
             transition: 0.5s; z-index: 10000; width: 90%; text-align: center; 
             box-shadow: 0 5px 20px rgba(0,0,0,0.6); font-weight: bold;
-            border: 1px solid rgba(255,255,255,0.3);
-            letter-spacing: 1px;
+            border: 1px solid rgba(255,255,255,0.3); letter-spacing: 1px;
         }
         .show { transform: translateX(-50%) translateY(0) !important; }
+
+        /* Modais Profissionais Customizados anti-LOCALHOST */
+        .custom-modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); 
+            z-index: 30000; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-content { 
+            background: var(--card); border-radius: 12px; width: 100%; max-width: 400px; 
+            padding: 20px; border-top: 4px solid var(--azul-notif); box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            animation: modalEntrada 0.3s ease-out;
+        }
+        @keyframes modalEntrada { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-top: 4px solid var(--verde); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         input, button { padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #334155; width: 100%; font-weight: bold; outline: none; }
@@ -53,7 +65,6 @@
         .equipa-box { display: flex; justify-content: space-between; background: #0f172a; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid var(--azul-notif); }
         .date-badge { font-size: 10px; background: #334155; padding: 3px 8px; border-radius: 5px; color: #60a5fa; font-weight: bold; }
         
-        /* ESTILOS EXCLUSIVOS DA NOVA ÁREA DE PRESENÇA */
         .flex-filtros { display: flex; gap: 8px; margin-bottom: 8px; }
         .btn-filtro { flex: 1; padding: 10px; background: #334155; border-radius: 6px; color: #94a3b8; font-size: 10px; }
         .btn-filtro.active-f { background: var(--azul-notif); color: white; }
@@ -65,6 +76,15 @@
 
     <div id="modal-img" onclick="fecharModal()">
         <img id="img-full" src="">
+    </div>
+
+    <div id="p-modal" class="custom-modal">
+        <div class="modal-content" id="p-modal-content">
+            <h4 id="p-modal-titulo" style="margin-bottom: 10px; color: #f1f5f9;">Confirmação</h4>
+            <p id="p-modal-texto" style="font-size: 13px; color: #94a3b8; margin-bottom: 15px; line-height: 1.4;"></p>
+            <div id="p-modal-input-container"></div>
+            <div class="grid-actions" id="p-modal-botoes"></div>
+        </div>
     </div>
 
     <div id="login-box">
@@ -82,6 +102,17 @@
             <div>Abaixo 1000<br><h2 id="tot-baixo" style="color: var(--laranja); font-size: 20px;">0</h2></div>
         </div>
 
+        <div class="card" style="border-top-color: #6366f1;">
+            <h4 style="color: #818cf8; margin-bottom: 10px;">Configurações Globais de Permissões (Coletivo)</h4>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Ative ou desative funcionalidades para TODOS os usuários cadastrados simultaneamente.</p>
+            <div class="grid-actions">
+                <button class="btn-v" onclick="solicitarPermissaoColetiva('podeSaque', true)">Permitir Saques (Todos)</button>
+                <button class="btn-r" onclick="solicitarPermissaoColetiva('podeSaque', false)">Bloquear Saques (Todos)</button>
+                <button class="btn-v" style="background: #a855f7;" onclick="solicitarPermissaoColetiva('podeComissao', true)">Permitir Comissões (Todas)</button>
+                <button class="btn-r" style="background: #b91c1c;" onclick="solicitarPermissaoColetiva('podeComissao', false)">Bloquear Comissões (Todas)</button>
+            </div>
+        </div>
+
         <div class="card" style="border-top-color: var(--ouro);">
             <h4 style="color: var(--ouro); margin-bottom: 10px;">Controlo de Presenças (Lista de Investidores)</h4>
             
@@ -93,8 +124,8 @@
             <input type="text" id="pesquisa-presenca" placeholder="Pesquisar por ID ou Contacto na lista..." oninput="filtrarTabelaPresenca()">
             
             <div class="grid-actions" style="margin-bottom: 10px;">
-                <button class="btn-v" onclick="presencaColetiva(true)">Marcar Presença Coletiva</button>
-                <button class="btn-r" onclick="presencaColetiva(false)">Desmarcar Coletiva</button>
+                <button class="btn-v" onclick="solicitarPresencaColetiva(true)">Marcar Presença Coletiva</button>
+                <button class="btn-r" onclick="solicitarPresencaColetiva(false)">Desmarcar Coletiva</button>
             </div>
 
             <div class="table-container" style="max-height: 300px;">
@@ -108,8 +139,7 @@
                             <th>Ação</th>
                         </tr>
                     </thead>
-                    <tbody id="lista-presencas-dinamica">
-                        </tbody>
+                    <tbody id="lista-presencas-dinamica"></tbody>
                 </table>
             </div>
         </div>
@@ -131,20 +161,27 @@
                 <p>Participativo: <b id="u-verif" style="color:var(--ouro)">NÃO</b></p>
                 <p>Saldo Atual: <b id="u-saldo" style="color:#fbbf24">0.00 KZ</b></p>
                 
+                <p style="margin-top: 10px; font-size:12px;">Permissão de Saque: <b id="u-perm-saque" style="color:var(--verde)">PERMITIDO</b></p>
+                <p style="font-size:12px; margin-bottom:10px;">Coleta de Comissão: <b id="u-perm-comissao" style="color:var(--verde)">PERMITIDO</b></p>
+                
                 <div class="grid-actions">
-                    <button class="btn-v" onclick="alterarSaldo('add')">+ SALDO</button>
-                    <button class="btn-r" onclick="alterarSaldo('rem')">- SALDO</button>
-                    <button style="background:#6366f1" onclick="mudarSenha()">EDITAR SENHA</button>
+                    <button class="btn-v" onclick="abrirModalSaldo('add')">+ SALDO</button>
+                    <button class="btn-r" onclick="abrirModalSaldo('rem')">- SALDO</button>
+                    <button style="background:#6366f1" onclick="abrirModalSenha()">EDITAR SENHA</button>
                     <button class="btn-b" id="lock-btn" onclick="toggleBloqueio()">BLOQUEAR</button>
                     <button class="btn-o" id="verif-btn" onclick="alterarVerificacao(true)">CONCEDER SELO</button>
                     <button class="btn-r" style="background:#475569;" id="unverif-btn" onclick="alterarVerificacao(false)">REMOVER SELO</button>
-                    <button class="btn-r" style="grid-column: span 2; margin-top: 5px; opacity: 0.8;" onclick="deletar()">APAGAR CONTA DEFINITIVAMENTE</button>
+                    
+                    <button class="btn-b" id="btn-p-saque" style="background: #0284c7;" onclick="abrirModalPermissaoIndividual('podeSaque')">ALTERAR SAQUE</button>
+                    <button class="btn-b" id="btn-p-comissao" style="background: #7c3aed;" onclick="abrirModalPermissaoIndividual('podeComissao')">ALTERAR COMISSÃO</button>
+                    
+                    <button class="btn-r" style="grid-column: span 2; margin-top: 5px; opacity: 0.8;" onclick="solicitarDeletar()">APAGAR CONTA DEFINITIVAMENTE</button>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h4 style="color:var(--verde)">Solicitações Financeiras</h4>
+            <h4 style="color:var(--verde)">Solicitações Financeiras <span style="font-size:10px; color:var(--vermelho); margin-left:5px;">(Mínimo: 1000 KZ)</span></h4>
             <div class="table-container">
                 <table>
                     <thead><tr><th>Usuário</th><th>Tipo</th><th>Valor</th><th>Prova</th><th>Ação</th></tr></thead>
@@ -162,22 +199,49 @@
                 </table>
             </div>
         </div>
-    </div>
-    <script>
+                </div>
+                    <script>
     const firebaseConfig = { apiKey: "AIzaSyA03WW6zrf79PsZY6KvaxGRsGFY1AEFCYs", authDomain: "fir-b8708.firebaseapp.com", databaseURL: "https://fir-b8708-default-rtdb.firebaseio.com", projectId: "fir-b8708", storageBucket: "fir-b8708.firebasestorage.app", messagingSenderId: "174524990208", appId: "1:174524990208:web:fa7e5b60d44d4aee98a9e5" };
     firebase.initializeApp(firebaseConfig); const db = firebase.database(); 
     let selUser = null;
     let selUserStatus = "";
-    
-    // Variável de controlo para a nova secção
     let filtroPresencaAtual = "abaixo"; 
     let cacheUsuariosLista = {};
 
+    // Mecanismo Base para Diálogos e Modais Customizados (Sem Localhost)
+    function abrirModalCustomizado({ titulo, texto, mostrarInput = false, placeholderInput = "", botoesCustomizados = null, acao }) {
+        document.getElementById('p-modal-titulo').innerText = titulo;
+        document.getElementById('p-modal-texto').innerText = texto;
+        
+        const containerInput = document.getElementById('p-modal-input-container');
+        containerInput.innerHTML = "";
+        if(mostrarInput) {
+            containerInput.innerHTML = `<input type="text" id="p-modal-campo" placeholder="${placeholderInput}">`;
+            setTimeout(() => document.getElementById('p-modal-campo').focus(), 100);
+        }
+
+        const containerBotoes = document.getElementById('p-modal-botoes');
+        if(botoesCustomizados) {
+            containerBotoes.innerHTML = botoesCustomizados;
+        } else {
+            containerBotoes.innerHTML = `
+                <button class="btn-r" style="background:#475569;" onclick="fecharModalCustomizado()">Cancelar</button>
+                <button id="p-modal-btn-ok" style="background:var(--azul-notif);">Confirmar</button>
+            `;
+            document.getElementById('p-modal-btn-ok').onclick = () => {
+                let valorInput = mostrarInput ? document.getElementById('p-modal-campo').value.trim() : null;
+                acao(valorInput);
+                fecharModalCustomizado();
+            };
+        }
+        document.getElementById('p-modal').style.display = "flex";
+    }
+
+    function fecharModalCustomizado() { document.getElementById('p-modal').style.display = "none"; }
+
     function ntf(msg, color = "#3b82f6") { 
         const n = document.getElementById('notif'); 
-        n.innerText = msg;
-        n.style.background = color;
-        n.classList.add('show'); 
+        n.innerText = msg; n.style.background = color; n.classList.add('show'); 
         setTimeout(()=>n.classList.remove('show'), 3000); 
     }
 
@@ -190,57 +254,34 @@
             document.getElementById('main-admin').style.display = 'block';
             ntf("Acesso Concedido. Bem-vindo!");
             carregarDados();
-        } else { 
-            ntf("ERRO: Chave ABS Incorreta!", "#ef4444"); 
-        }
+        } else { ntf("ERRO: Chave ABS Incorreta!", "#ef4444"); }
     }
 
     function carregarDados() {
         db.ref('users').on('value', snap => {
-            const users = snap.val() || {}; 
-            cacheUsuariosLista = users; // Salva na memória global para buscas e ações coletivas rápidos
-            
+            const users = snap.val() || {}; cacheUsuariosLista = users; 
             let ti=0, tv=0, tb=0, hG='', hR='';
             for(let t in users) {
                 ti++; 
                 let temInvEq = (users[t].inv_eq || 0) > 0;
                 let temAlgumHistoricoAtivo = false;
-                
-                if(users[t].hR) {
-                    users[t].hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; });
-                }
-
-                if(temInvEq) { tv++; } 
-                else if(temAlgumHistoricoAtivo || (users[t].conv || 0) > 0) { tb++; }
+                if(users[t].hR) { users[t].hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; }); }
+                if(temInvEq) { tv++; } else if(temAlgumHistoricoAtivo || (users[t].conv || 0) > 0) { tb++; }
                 
                 let dReg = users[t].dataReg || "--/--/--";
                 let vStatus = users[t].status || 'Ativo';
                 let isVerif = users[t].verificado || false;
                 
-                hG += `<tr>
-                    <td>${users[t].id}</td>
-                    <td>${t}</td>
-                    <td>${(users[t].saldo||0).toFixed(2)}</td>
-                    <td>${dReg}</td>
-                    <td><span style="color:${vStatus === 'Bloqueado' ? '#ef4444' : '#22c55e'}">${vStatus}</span></td>
-                    <td><span style="color:${isVerif ? '#eab308' : '#94a3b8'}; font-weight: bold;">${isVerif ? '⭐ SIM' : 'NÃO'}</span></td>
-                </tr>`;
-                
+                hG += `<tr><td>${users[t].id}</td><td>${t}</td><td>${(users[t].saldo||0).toFixed(2)}</td><td>${dReg}</td><td><span style="color:${vStatus === 'Bloqueado' ? '#ef4444' : '#22c55e'}">${vStatus}</span></td><td><span style="color:${isVerif ? '#eab308' : '#94a3b8'}; font-weight: bold;">${isVerif ? '⭐ SIM' : 'NÃO'}</span></td></tr>`;
                 if(users[t].hR) users[t].hR.forEach((r, i) => { if(r.s === 'Pendente') hR += `<tr><td>${t}</td><td>DEP</td><td>${r.v} KZ</td><td><img src="${r.img}" class="img-preview" onclick="verImagem('${r.img}')"></td><td><button class="btn-v" onclick="processar('${t}',${i},'hR','Aprovado',${r.v})">V</button> <button class="btn-r" onclick="processar('${t}',${i},'hR','Reprovado',0)">X</button></td></tr>`; });
                 if(users[t].hS) users[t].hS.forEach((s, i) => { if(s.s === 'Em processamento') hR += `<tr><td>${t}</td><td>SAQUE</td><td>${s.v} KZ</td><td>IBAN: ${s.iban||'---'}</td><td><button class="btn-v" onclick="processar('${t}',${i},'hS','Pago',0)">V</button> <button class="btn-r" onclick="processar('${t}',${i},'hS','Reprovado',0)">X</button></td></tr>`; });
             }
-            document.getElementById('tot-ins').innerText = ti; 
-            document.getElementById('tot-inv').innerText = tv;
-            document.getElementById('tot-baixo').innerText = tb; 
-            document.getElementById('lista-geral').innerHTML = hG; 
-            document.getElementById('lista-req').innerHTML = hR;
-            
-            // Renderiza a nova tabela de presenças baseada no filtro selecionado
+            document.getElementById('tot-ins').innerText = ti; document.getElementById('tot-inv').innerText = tv; document.getElementById('tot-baixo').innerText = tb; document.getElementById('lista-geral').innerHTML = hG; document.getElementById('lista-req').innerHTML = hR;
             renderizarTabelaPresenca();
+            if(selUser) atualizarVisualizacaoPermissoes(users[selUser]);
         });
     }
 
-    // NOVAS FUNÇÕES: IMPLEMENTAÇÃO DO SISTEMA DE PRESENÇAS
     function mudarFiltroPresenca(tipo) {
         filtroPresencaAtual = tipo;
         document.getElementById('f-btn-abaixo').className = tipo === 'abaixo' ? 'btn-filtro active-f' : 'btn-filtro';
@@ -249,102 +290,113 @@
     }
 
     function renderizarTabelaPresenca() {
-        let html = '';
-        const termoPesquisa = document.getElementById('pesquisa-presenca').value.trim().toLowerCase();
-
+        let html = ''; const termoPesquisa = document.getElementById('pesquisa-presenca').value.trim().toLowerCase();
         for (let t in cacheUsuariosLista) {
-            const u = cacheUsuariosLista[t];
-            let temInvEq = (u.inv_eq || 0) > 0;
-            let temAlgumHistoricoAtivo = false;
+            const u = cacheUsuariosLista[t]; let temInvEq = (u.inv_eq || 0) > 0; let temAlgumHistoricoAtivo = false;
             if(u.hR) { u.hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; }); }
-
-            let pertenceAoFiltro = false;
-            let tipoInvestimento = "0.00 KZ";
-
-            if (filtroPresencaAtual === 'superior' && temInvEq) {
-                pertenceAoFiltro = true;
-                tipoInvestimento = ">= 1000 KZ";
-            } else if (filtroPresencaAtual === 'abaixo' && (temAlgumHistoricoAtivo || (u.conv || 0) > 0) && !temInvEq) {
-                pertenceAoFiltro = true;
-                tipoInvestimento = "< 1000 KZ";
-            }
+            let pertenceAoFiltro = false; let tipoInvestimento = "0.00 KZ";
+            if (filtroPresencaAtual === 'superior' && temInvEq) { pertenceAoFiltro = true; tipoInvestimento = ">= 1000 KZ"; } 
+            else if (filtroPresencaAtual === 'abaixo' && (temAlgumHistoricoAtivo || (u.conv || 0) > 0) && !temInvEq) { pertenceAoFiltro = true; tipoInvestimento = "< 1000 KZ"; }
 
             if (pertenceAoFiltro) {
-                const idStr = String(u.id || '');
-                const telStr = String(t || '');
-
-                // Aplica a filtragem por ID ou Contacto caso haja texto inserido
+                const idStr = String(u.id || ''); const telStr = String(t || '');
                 if (!termoPesquisa || idStr.toLowerCase().includes(termoPesquisa) || telStr.toLowerCase().includes(termoPesquisa)) {
                     let dataPresenca = u.dataPresenca || "Nenhuma";
-                    let btnAcao = u.dataPresenca 
-                        ? `<button class="btn-r" style="padding:6px; margin:0;" onclick="marcarIndividual('${t}', false)">Desmarcar</button>` 
-                        : `<button class="btn-v" style="padding:6px; margin:0;" onclick="marcarIndividual('${t}', true)">Marcar</button>`;
-
-                    html += `<tr>
-                        <td><b>${u.id}</b></td>
-                        <td>${t}</td>
-                        <td><span style="color:${filtroPresencaAtual==='superior'?'#22c55e':'#f97316'}">${tipoInvestimento}</span></td>
-                        <td><span class="date-badge" style="background:${u.dataPresenca?'#15803d':'#334155'}; color:white;">${dataPresenca}</span></td>
-                        <td>${btnAcao}</td>
-                    </tr>`;
+                    let btnAcao = u.dataPresenca ? `<button class="btn-r" style="padding:6px; margin:0;" onclick="marcarIndividual('${t}', false)">Desmarcar</button>` : `<button class="btn-v" style="padding:6px; margin:0;" onclick="marcarIndividual('${t}', true)">Marcar</button>`;
+                    html += `<tr><td><b>${u.id}</b></td><td>${t}</td><td><span style="color:${filtroPresencaAtual==='superior'?'var(--verde)':'var(--laranja)'}">${tipoInvestimento}</span></td><td><span class="date-badge" style="background:${u.dataPresenca?'#15803d':'#334155'}; color:white;">${dataPresenca}</span></td><td>${btnAcao}</td></tr>`;
                 }
             }
         }
         document.getElementById('lista-presencas-dinamica').innerHTML = html || `<tr><td colspan="5" style="text-align:center; color:#64748b;">Nenhum usuário encontrado neste grupo.</td></tr>`;
     }
 
-    function filtrarTabelaPresenca() {
-        renderizarTabelaPresenca();
-    }
+    function filtrarTabelaPresenca() { renderizarTabelaPresenca(); }
+    function marcarIndividual(telefone, status) { let dataValor = status ? new Date().toLocaleString('pt-AO') : null; db.ref(`users/${telefone}`).update({ dataPresenca: dataValor }); }
 
-    function marcarIndividual(telefone, status) {
-        let dataValor = status ? new Date().toLocaleString('pt-AO') : null;
-        db.ref(`users/${telefone}`).update({ dataPresenca: dataValor }).then(() => {
-            ntf(status ? "Presença marcada!" : "Presença removida!", status ? "#22c55e" : "#ef4444");
+    function solicitarPresencaColetiva(status) {
+        abrirModalCustomizado({
+            titulo: status ? "Marcar Presença Coletiva" : "Desmarcar Presença Coletiva",
+            texto: status ? "Deseja MARCAR a presença de TODOS os usuários do grupo selecionado?" : "Deseja REMOVER a presença de TODOS os usuários do grupo selecionado?",
+            botoesCustomizados: `
+                <button class="btn-r" style="background:#475569;" onclick="fecharModalCustomizado()">Cancelar</button>
+                <button class="btn-v" style="background:${status?'var(--verde)':'var(--vermelho)'};" onclick="executarPresencaColetiva(${status})">${status?'Marcar':'Remover'}</button>
+            `
         });
     }
 
-    function presencaColetiva(status) {
-        let textoConfirmacao = status ? "Deseja MARCAR a presença de TODOS do grupo selecionado?" : "Deseja REMOVER a presença de TODOS do grupo selecionado?";
-        if (!confirm(textoConfirmacao)) return;
-
-        let dataValor = status ? new Date().toLocaleString('pt-AO') : null;
-        let updates = {};
-        let totalModificados = 0;
-
+    function ejecutarPresencaColetiva(status) {
+        let dataValor = status ? new Date().toLocaleString('pt-AO') : null; let updates = {}; let totalModificados = 0;
         for (let t in cacheUsuariosLista) {
-            const u = cacheUsuariosLista[t];
-            let temInvEq = (u.inv_eq || 0) > 0;
-            let temAlgumHistoricoAtivo = false;
+            const u = cacheUsuariosLista[t]; let temInvEq = (u.inv_eq || 0) > 0; let temAlgumHistoricoAtivo = false;
             if(u.hR) { u.hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; }); }
-
             let pertenceAoFiltro = false;
             if (filtroPresencaAtual === 'superior' && temInvEq) pertenceAoFiltro = true;
             if (filtroPresencaAtual === 'abaixo' && (temAlgumHistoricoAtivo || (u.conv || 0) > 0) && !temInvEq) pertenceAoFiltro = true;
-
-            if (pertenceAoFiltro) {
-                updates[`users/${t}/dataPresenca`] = dataValor;
-                totalModificados++;
-            }
+            if (pertenceAoFiltro) { updates[`users/${t}/dataPresenca`] = dataValor; totalModificados++; }
         }
-
-        if (totalModificados > 0) {
-            db.ref().update(updates).then(() => {
-                ntf(`Ação coletiva aplicada em ${totalModificados} contas!`, status ? "#22c55e" : "#ef4444");
-            });
-        } else {
-            ntf("Nenhum usuário no grupo para modificar.", "#f97316");
-        }
+        if (totalModificados > 0) { db.ref().update(updates).then(() => { ntf(`Ação coletiva aplicada em ${totalModificados} contas!`, status ? "var(--verde)" : "var(--vermelho)"); fecharModalCustomizado(); }); }
     }
 
-    // MANUTENÇÃO INTEGRAL DAS FUNÇÕES EXISTENTES
+    function atualizarVisualizacaoPermissoes(u) {
+        let pSaque = u.podeSaque !== false; let pComissao = u.podeComissao !== false;
+        document.getElementById('u-perm-saque').innerText = pSaque ? "PERMITIDO" : "BLOQUEADO";
+        document.getElementById('u-perm-saque').style.color = pSaque ? "var(--verde)" : "var(--vermelho)";
+        document.getElementById('u-perm-comissao').innerText = pComissao ? "PERMITIDO" : "BLOQUEADO";
+        document.getElementById('u-perm-comissao').style.color = pComissao ? "var(--verde)" : "var(--vermelho)";
+    }
+
+    // NOVA FUNÇÃO CORRIGIDA DE ESCOLHA ALVO INDIVIDUAL (Com interface limpa de decisão)
+    function abrirModalPermissaoIndividual(campo) {
+        if(!selUser) {
+            ntf("ERRO: Escolha primeiro o usuário pelo ID ou Contacto!", "var(--vermelho)");
+            return;
+        }
+        let nomeRecurso = campo === 'podeSaque' ? "SAQUE" : "COLETA DE COMISSÃO";
+        
+        abrirModalCustomizado({
+            titulo: `Configurar Alvo Individual: ${nomeRecurso}`,
+            texto: `Selecione a ação desejada para a conta alvo (${selUser}):`,
+            botoesCustomizados: `
+                <button class="btn-r" onclick="executarPermissaoIndividual('${campo}', false)">BLOQUEAR</button>
+                <button class="btn-v" onclick="executarPermissaoIndividual('${campo}', true)">PERMITIR</button>
+            `
+        });
+    }
+
+    function executarPermissaoIndividual(campo, estado) {
+        let objUpdate = {}; objUpdate[campo] = estado;
+        db.ref(`users/${selUser}`).update(objUpdate).then(() => {
+            ntf("Permissão do usuário atualizada com sucesso!", estado ? "var(--verde)" : "var(--vermelho)");
+            fecharModalCustomizado();
+            buscarUser();
+        });
+    }
+
+    // COLETIVA INDEPENDENTE (Sem precisar escolher usuário)
+    function solicitarPermissaoColetiva(campo, status) {
+        let acaoTexto = status ? "PERMITIR" : "BLOQUEAR";
+        let funcionalidade = campo === 'podeSaque' ? "SAQUES" : "COLETA DE COMISSÕES";
+        abrirModalCustomizado({
+            titulo: "Alteração Global Coletiva",
+            texto: `Tens certeza que desejas ${acaoTexto} globalmente os ${funcionalidade} para todos os cadastros simultaneamente?`,
+            botoesCustomizados: `
+                <button class="btn-r" style="background:#475569;" onclick="fecharModalCustomizado()">Cancelar</button>
+                <button class="btn-v" style="background:${status?'var(--verde)':'var(--vermelho)'};" onclick="executarPermissaoColetiva('${campo}', ${status})">${acaoTexto} TODOS</button>
+            `
+        });
+    }
+
+    function executarPermissaoColetiva(campo, status) {
+        let updates = {}; let total = 0;
+        for(let t in cacheUsuariosLista) { updates[`users/${t}/${campo}`] = status; total++; }
+        if(total > 0) { db.ref().update(updates).then(() => { ntf(`Sucesso global aplicado para ${total} usuários.`, status ? "var(--verde)" : "var(--vermelho)"); fecharModalCustomizado(); }); }
+    }
+
     function buscarUser() {
-        const q = document.getElementById('q-user').value.trim();
-        if(!q) return;
+        const q = document.getElementById('q-user').value.trim(); if(!q) return;
         db.ref('users').once('value', s => {
             const data = s.val(); let achou = false; let telefoneEncontrado = "";
             for(let t in data) { if(t === q || data[t].id == q) { achou = true; telefoneEncontrado = t; break; } }
-            
             if(achou) {
                 selUser = telefoneEncontrado; const u = data[telefoneEncontrado]; selUserStatus = u.status || "Ativo"; let isVerificado = u.verificado || false;
                 let contagemInscritosRede = 0; for(let t in data) { if(data[t].padrinho === telefoneEncontrado) { contagemInscritosRede++; } }
@@ -355,34 +407,61 @@
                 document.getElementById('u-saldo').innerText = (u.saldo||0).toFixed(2) + " KZ";
                 document.getElementById('lock-btn').innerText = selUserStatus === "Bloqueado" ? "DESBLOQUEAR AGORA" : "BLOQUEAR USUÁRIO";
                 document.getElementById('lock-btn').className = selUserStatus === "Bloqueado" ? "btn-v" : "btn-b";
+                atualizarVisualizacaoPermissoes(u);
                 document.getElementById('user-box').style.display = 'block'; ntf("Usuário Localizado!");
             } else { ntf("ERRO: Usuário não encontrado!", "#ef4444"); }
         });
     }
 
-    function alterarVerificacao(estado) {
+    function abrirModalSaldo(tipo) {
         if(!selUser) return;
-        db.ref(`users/${selUser}`).update({ verificado: estado }).then(() => { ntf(estado ? "Selo Participativo Concedido!" : "Selo Participativo Removido!", estado ? "#eab308" : "#64748b"); buscarUser(); });
-    }
-
-    function processar(t, i, pasta, status, val) {
-        db.ref(`users/${t}`).once('value', s => {
-            let u = s.val(); if(!u[pasta] || !u[pasta][i]) return;
-            u[pasta][i].s = status;
-            let updates = {}; updates[`users/${t}/${pasta}`] = u[pasta];
-            if(status === 'Aprovado') updates[`users/${t}/saldo`] = (u.saldo || 0) + val;
-            db.ref().update(updates).then(() => ntf("Transação Atualizada!"));
+        abrirModalCustomizado({
+            titulo: tipo === 'add' ? "Adicionar Saldo" : "Remover Saldo",
+            texto: `Insira o valor em Kwanza (KZ) para a conta (${selUser}):`,
+            mostrarInput: true, placeholderInput: "Ex: 2500",
+            acao: (valor) => {
+                let v = parseFloat(valor); if(isNaN(v) || v <= 0) { ntf("Valor inválido!", "var(--vermelho)"); return; }
+                db.ref(`users/${selUser}`).once('value', snap => {
+                    let u = snap.val() || {}; let atual = u.saldo || 0;
+                    let novo = tipo === 'add' ? atual + v : atual - v;
+                    db.ref(`users/${selUser}`).update({ saldo: novo, saldoReal: novo }).then(() => { ntf("Saldo Atualizado!", "var(--verde)"); buscarUser(); });
+                });
+            }
         });
     }
 
-    function alterarSaldo(tipo) {
-        let v = parseFloat(prompt("Digite o valor para alterar o saldo:")); if(isNaN(v)) return;
-        db.ref(`users/${selUser}/saldo`).transaction(atual => (tipo === 'add' ? (atual || 0) + v : (atual || 0) - v)).then(() => { ntf("Saldo Modificado com Sucesso!"); buscarUser(); });
+    function abrirModalSenha() {
+        if(!selUser) return;
+        abrirModalCustomizado({
+            titulo: "Editar Senha da Conta",
+            texto: "Defina o novo código de acesso do utilizador:",
+            mostrarInput: true, placeholderInput: "Senha",
+            acao: (novaSenha) => {
+                if(!novaSenha) { ntf("Senha inválida!", "var(--vermelho)"); return; }
+                db.ref(`users/${selUser}`).update({pass: novaSenha}).then(()=>{ ntf("Nova Senha Configurada!"); buscarUser(); });
+            }
+        });
     }
 
-    function mudarSenha() { let p = prompt("Defina a nova senha:"); if(p) db.ref(`users/${selUser}`).update({pass:p}).then(()=>{ ntf("Nova Senha Configurada!"); buscarUser(); }); }
-    function toggleBloqueio() { let novoStatus = selUserStatus === "Bloqueado" ? "Ativo" : "Bloqueado"; db.ref(`users/${selUser}`).update({status: novoStatus}).then(()=>{ ntf("Acesso do Usuário Atualizado!"); buscarUser(); }); }
-    function deletar() { if(confirm("ATENÇÃO: Deseja apagar esta conta para sempre?")) { db.ref(`users/${selUser}`).remove().then(()=>{ document.getElementById('user-box').style.display='none'; ntf("Conta Removida do Banco de Dados!"); }); } }
+    function solicitarDeletar() {
+        if(!selUser) return;
+        abrirModalCustomizado({
+            titulo: "Aviso Crítico de Exclusão",
+            texto: "Apagar permanentemente todos os dados desta conta do banco de dados?",
+            botoesCustomizados: `
+                <button class="btn-b" onclick="fecharModalCustomizado()">Cancelar</button>
+                <button class="btn-r" onclick="executarDeletar()">Apagar Definitivamente</button>
+            `
+        });
+    }
+
+    function executarDeletar() {
+        db.ref(`users/${selUser}`).remove().then(()=>{ document.getElementById('user-box').style.display='none'; selUser = null; ntf("Conta Removida!", "var(--vermelho)"); fecharModalCustomizado(); });
+    }
+
+    function alterarVerificacao(estado) { if(!selUser) return; db.ref(`users/${selUser}`).update({ verificado: estado }).then(() => { buscarUser(); }); }
+    function toggleBloqueio() { if(!selUser) return; let novoStatus = selUserStatus === "Bloqueado" ? "Ativo" : "Bloqueado"; db.ref(`users/${selUser}`).update({status: novoStatus}).then(()=>{ buscarUser(); }); }
+    function processar(t, i, pasta, status, val) { db.ref(`users/${t}`).once('value', s => { let u = s.val(); if(!u[pasta] || !u[pasta][i]) return; u[pasta][i].s = status; let updates = {}; updates[`users/${t}/${pasta}`] = u[pasta]; if(status === 'Aprovado') { updates[`users/${t}/saldo`] = (u.saldo || 0) + val; updates[`users/${t}/saldoReal`] = (u.saldoReal || u.saldo || 0) + val; } db.ref().update(updates); }); }
 </script>
 </body>
 </html>
