@@ -1,467 +1,439 @@
 <!DOCTYPE html>
-<html lang="pt-ao">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ADMIN MASTER | GITHUB</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Car Share Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --verde: #22c55e; 
-            --vermelho: #ef4444; 
-            --bg: #0f172a; 
-            --card: #1e293b; 
-            --azul-notif: #3b82f6; 
-            --ouro: #eab308;
-            --laranja: #f97316;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f1f5f9; padding: 10px; }
-        
-        #notif { 
-            position: fixed; top: 10px; left: 50%; transform: translateX(-50%) translateY(-200%); 
-            background: var(--azul-notif); color: white; padding: 15px; border-radius: 8px; 
-            transition: 0.5s; z-index: 10000; width: 90%; text-align: center; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.6); font-weight: bold;
-            border: 1px solid rgba(255,255,255,0.3); letter-spacing: 1px;
-        }
-        .show { transform: translateX(-50%) translateY(0) !important; }
-
-        /* Modais Profissionais Customizados anti-LOCALHOST */
-        .custom-modal { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); 
-            z-index: 30000; justify-content: center; align-items: center; padding: 20px;
-        }
-        .modal-content { 
-            background: var(--card); border-radius: 12px; width: 100%; max-width: 400px; 
-            padding: 20px; border-top: 4px solid var(--azul-notif); box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            animation: modalEntrada 0.3s ease-out;
-        }
-        @keyframes modalEntrada { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-        .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-top: 4px solid var(--verde); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        input, button { padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #334155; width: 100%; font-weight: bold; outline: none; }
-        input { background: #0f172a; color: white; }
-        button { cursor: pointer; color: white; border: none; text-transform: uppercase; font-size: 11px; transition: 0.3s; }
-        button:active { transform: scale(0.95); }
-        .btn-v { background: var(--verde); }
-        .btn-r { background: var(--vermelho); }
-        .btn-b { background: #3b82f6; }
-        .btn-o { background: var(--ouro); color: #0f172a; }
-        
-        .table-container { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 8px; background: #0f172a; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 11px; }
-        th, td { padding: 12px; border-bottom: 1px solid #334155; text-align: left; }
-        th { background: #1e293b; color: var(--azul-notif); }
-        
-        .img-preview { width: 45px; height: 45px; object-fit: cover; border: 2px solid var(--verde); border-radius: 6px; cursor: zoom-in; }
-        #modal-img { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20000; justify-content: center; align-items: center; }
-        #modal-img img { max-width: 90%; max-height: 80%; border: 2px solid white; }
-
-        #login-box { text-align: center; margin-top: 15vh; padding: 25px; max-width: 400px; margin-left: auto; margin-right: auto; }
-        .grid-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .equipa-box { display: flex; justify-content: space-between; background: #0f172a; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid var(--azul-notif); }
-        .date-badge { font-size: 10px; background: #334155; padding: 3px 8px; border-radius: 5px; color: #60a5fa; font-weight: bold; }
-        
-        .flex-filtros { display: flex; gap: 8px; margin-bottom: 8px; }
-        .btn-filtro { flex: 1; padding: 10px; background: #334155; border-radius: 6px; color: #94a3b8; font-size: 10px; }
-        .btn-filtro.active-f { background: var(--azul-notif); color: white; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body>
+<body class="bg-neutral-950 text-white min-h-screen w-screen m-0 p-0 overflow-x-hidden">
 
-    <div id="notif">Mensagem do Sistema</div>
-
-    <div id="modal-img" onclick="fecharModal()">
-        <img id="img-full" src="">
-    </div>
-
-    <div id="p-modal" class="custom-modal">
-        <div class="modal-content" id="p-modal-content">
-            <h4 id="p-modal-titulo" style="margin-bottom: 10px; color: #f1f5f9;">Confirmação</h4>
-            <p id="p-modal-texto" style="font-size: 13px; color: #94a3b8; margin-bottom: 15px; line-height: 1.4;"></p>
-            <div id="p-modal-input-container"></div>
-            <div class="grid-actions" id="p-modal-botoes"></div>
+    <div id="admin-auth" class="fixed inset-0 bg-black z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl p-6 text-center space-y-4">
+            <h2 class="text-sm font-black tracking-widest text-amber-400 uppercase">Acesso Restrito Admin</h2>
+            <input type="password" id="admin-pass-input" placeholder="Introduza o código de acesso" class="w-full px-4 py-3 bg-black border border-white/10 rounded-xl text-xs text-white text-center focus:outline-none tracking-widest">
+            <button onclick="verificarAcessoAdmin()" class="w-full bg-amber-500 text-black py-3 rounded-xl font-bold text-xs uppercase tracking-wider">Autenticar Sistema</button>
         </div>
     </div>
 
-    <div id="login-box">
-        <h2 style="letter-spacing: 3px; color: var(--azul-notif); margin-bottom: 20px;">ADMIN MASTER</h2>
-        <div class="card" style="border-top-color: var(--azul-notif);">
-            <input type="password" id="m-key" placeholder="Chave de Acesso ABS">
-            <button class="btn-b" onclick="verificarAcesso()">AUTENTICAR</button>
+    <div id="custom-alert" class="fixed top-5 inset-x-4 mx-auto max-w-sm z-50 bg-neutral-900 border border-amber-500/30 rounded-xl p-4 shadow-2xl hidden pointer-events-auto">
+        <div class="flex items-start space-x-3">
+            <div id="alert-icon" class="text-amber-400 text-sm">⚠️</div>
+            <div class="flex-1">
+                <h4 id="alert-title" class="text-xs font-black uppercase text-white tracking-wider">Notificação</h4>
+                <p id="alert-message" class="text-[10px] text-neutral-400 mt-0.5 leading-relaxed"></p>
+            </div>
         </div>
+        <div class="mt-3 flex justify-end"><button onclick="fecharAlert()" class="bg-white/5 border border-white/10 px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-white/10">Fechar</button></div>
     </div>
-    
-    <div id="main-admin" style="display: none;">
-        <div class="card" style="display: flex; justify-content: space-around; text-align: center; border-top-color: var(--azul-notif); gap: 5px;">
-            <div>Inscritos<br><h2 id="tot-ins" style="color: var(--azul-notif); font-size: 20px;">0</h2></div>
-            <div>Investidores<br><h2 id="tot-inv" style="color: var(--verde); font-size: 20px;">0</h2></div>
-            <div>Abaixo 1000<br><h2 id="tot-baixo" style="color: var(--laranja); font-size: 20px;">0</h2></div>
+
+    <div id="modal-comprovativo" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4">
+        <div class="max-w-md w-full flex justify-end mb-2">
+            <button onclick="fecharModalComprovativo()" class="bg-neutral-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider">✕ Fechar Janela</button>
         </div>
+        <img id="img-comprovativo-full" src="" class="max-w-md max-h-[80vh] object-contain rounded-xl border border-white/10">
+    </div>
 
-        <div class="card" style="border-top-color: #6366f1;">
-            <h4 style="color: #818cf8; margin-bottom: 10px;">Configurações Globais de Permissões (Coletivo)</h4>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Ative ou desative funcionalidades para TODOS os usuários cadastrados simultaneamente.</p>
-            <div class="grid-actions">
-                <button class="btn-v" onclick="solicitarPermissaoColetiva('podeSaque', true)">Permitir Saques (Todos)</button>
-                <button class="btn-r" onclick="solicitarPermissaoColetiva('podeSaque', false)">Bloquear Saques (Todos)</button>
-                <button class="btn-v" style="background: #a855f7;" onclick="solicitarPermissaoColetiva('podeComissao', true)">Permitir Comissões (Todas)</button>
-                <button class="btn-r" style="background: #b91c1c;" onclick="solicitarPermissaoColetiva('podeComissao', false)">Bloquear Comissões (Todas)</button>
-            </div>
-        </div>
-
-        <div class="card" style="border-top-color: var(--ouro);">
-            <h4 style="color: var(--ouro); margin-bottom: 10px;">Controlo de Presenças (Lista de Investidores)</h4>
-            
-            <div class="flex-filtros">
-                <button id="f-btn-abaixo" class="btn-filtro active-f" onclick="mudarFiltroPresenca('abaixo')">Investimento Abaixo 1000</button>
-                <button id="f-btn-superior" class="btn-filtro" onclick="mudarFiltroPresenca('superior')">Investimento Superior (>=1000)</button>
-            </div>
-
-            <input type="text" id="pesquisa-presenca" placeholder="Pesquisar por ID ou Contacto na lista..." oninput="filtrarTabelaPresenca()">
-            
-            <div class="grid-actions" style="margin-bottom: 10px;">
-                <button class="btn-v" onclick="solicitarPresencaColetiva(true)">Marcar Presença Coletiva</button>
-                <button class="btn-r" onclick="solicitarPresencaColetiva(false)">Desmarcar Coletiva</button>
-            </div>
-
-            <div class="table-container" style="max-height: 300px;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Contacto</th>
-                            <th>Investimento</th>
-                            <th>Data Presença</th>
-                            <th>Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-presencas-dinamica"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <h4 style="margin-bottom: 10px;">Gestão de Usuário</h4>
-            <input type="text" id="q-user" placeholder="Digite ID ou Telefone">
-            <button class="btn-b" onclick="buscarUser()">LOCALIZAR CONTA</button>
-            
-            <div id="user-box" style="display:none; margin-top:15px; padding:15px; background:#1e293b; border-radius:10px; border: 1px solid #334155;">
-                <p>Usuário: <b id="u-tel" style="color:var(--verde)"></b> | ID: <b id="u-id"></b></p>
-                <p style="margin: 8px 0;"><span class="date-badge">REGISTRO: <span id="u-data">--/--/----</span></span></p>
-                
-                <div class="equipa-box">
-                    <div>Rede: <b id="u-ins" style="color:var(--azul-notif)">0</b></div>
-                    <div>Ativos: <b id="u-inv" style="color:var(--verde)">0</b></div>
-                </div>
-                <p>Acesso: <b id="u-pass"></b> | Status: <b id="u-status"></b></p>
-                <p>Participativo: <b id="u-verif" style="color:var(--ouro)">NÃO</b></p>
-                <p>Saldo Atual: <b id="u-saldo" style="color:#fbbf24">0.00 KZ</b></p>
-                
-                <p style="margin-top: 10px; font-size:12px;">Permissão de Saque: <b id="u-perm-saque" style="color:var(--verde)">PERMITIDO</b></p>
-                <p style="font-size:12px; margin-bottom:10px;">Coleta de Comissão: <b id="u-perm-comissao" style="color:var(--verde)">PERMITIDO</b></p>
-                
-                <div class="grid-actions">
-                    <button class="btn-v" onclick="abrirModalSaldo('add')">+ SALDO</button>
-                    <button class="btn-r" onclick="abrirModalSaldo('rem')">- SALDO</button>
-                    <button style="background:#6366f1" onclick="abrirModalSenha()">EDITAR SENHA</button>
-                    <button class="btn-b" id="lock-btn" onclick="toggleBloqueio()">BLOQUEAR</button>
-                    <button class="btn-o" id="verif-btn" onclick="alterarVerificacao(true)">CONCEDER SELO</button>
-                    <button class="btn-r" style="background:#475569;" id="unverif-btn" onclick="alterarVerificacao(false)">REMOVER SELO</button>
-                    
-                    <button class="btn-b" id="btn-p-saque" style="background: #0284c7;" onclick="abrirModalPermissaoIndividual('podeSaque')">ALTERAR SAQUE</button>
-                    <button class="btn-b" id="btn-p-comissao" style="background: #7c3aed;" onclick="abrirModalPermissaoIndividual('podeComissao')">ALTERAR COMISSÃO</button>
-                    
-                    <button class="btn-r" style="grid-column: span 2; margin-top: 5px; opacity: 0.8;" onclick="solicitarDeletar()">APAGAR CONTA DEFINITIVAMENTE</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h4 style="color:var(--verde)">Solicitações Financeiras <span style="font-size:10px; color:var(--vermelho); margin-left:5px;">(Mínimo: 1000 KZ)</span></h4>
-            <div class="table-container">
-                <table>
-                    <thead><tr><th>Usuário</th><th>Tipo</th><th>Valor</th><th>Prova</th><th>Ação</th></tr></thead>
-                    <tbody id="lista-req"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card" style="border-top-color: #64748b;">
-            <h4>Base de Dados de Contactos</h4>
-            <div class="table-container" style="max-height: 350px;">
-                <table>
-                    <thead><tr><th>ID</th><th>Contacto</th><th>Saldo</th><th>Data</th><th>Status</th><th>Participativo</th></tr></thead>
-                    <tbody id="lista-geral"></tbody>
-                </table>
-            </div>
-        </div>
-                </div>
-                    <script>
-    const firebaseConfig = { apiKey: "AIzaSyA03WW6zrf79PsZY6KvaxGRsGFY1AEFCYs", authDomain: "fir-b8708.firebaseapp.com", databaseURL: "https://fir-b8708-default-rtdb.firebaseio.com", projectId: "fir-b8708", storageBucket: "fir-b8708.firebasestorage.app", messagingSenderId: "174524990208", appId: "1:174524990208:web:fa7e5b60d44d4aee98a9e5" };
-    firebase.initializeApp(firebaseConfig); const db = firebase.database(); 
-    let selUser = null;
-    let selUserStatus = "";
-    let filtroPresencaAtual = "abaixo"; 
-    let cacheUsuariosLista = {};
-
-    // Mecanismo Base para Diálogos e Modais Customizados (Sem Localhost)
-    function abrirModalCustomizado({ titulo, texto, mostrarInput = false, placeholderInput = "", botoesCustomizados = null, acao }) {
-        document.getElementById('p-modal-titulo').innerText = titulo;
-        document.getElementById('p-modal-texto').innerText = texto;
+    <div id="admin-content" class="hidden p-4 max-w-md mx-auto space-y-5 pb-12">
         
-        const containerInput = document.getElementById('p-modal-input-container');
-        containerInput.innerHTML = "";
-        if(mostrarInput) {
-            containerInput.innerHTML = `<input type="text" id="p-modal-campo" placeholder="${placeholderInput}">`;
-            setTimeout(() => document.getElementById('p-modal-campo').focus(), 100);
+        <div class="bg-neutral-900 border border-white/10 p-3.5 rounded-2xl space-y-2">
+            <label class="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Ficha do Utilizador (Editar Saldo/Senha)</label>
+            <div class="flex gap-2">
+                <input type="tel" id="search-phone" maxlength="9" placeholder="9xxxxxxxx" class="flex-1 px-3 py-2.5 bg-black border border-white/10 rounded-xl text-xs text-white tracking-widest font-mono focus:outline-none">
+                <button onclick="pesquisarUtilizador()" class="bg-white text-black px-4 rounded-xl font-bold text-xs uppercase">Abrir Ficha</button>
+            </div>
+        </div>
+
+        <div id="user-profile-modal" class="hidden bg-neutral-900 border-2 border-amber-500/40 p-4 rounded-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                <h3 class="text-xs font-black text-amber-400">FICHA DE CONTROLO DO UTILIZADOR</h3>
+                <button onclick="fecharFicha()" class="text-white bg-neutral-800 px-2 py-1 rounded text-[10px] font-bold">✕ FECHAR</button>
+            </div>
+            <div class="text-xs space-y-1 bg-black/50 p-3 rounded-xl border border-white/5 font-mono">
+                <p>📞 Contacto: <span id="view-phone" class="text-white font-bold"></span></p>
+                <p>📅 Data de Registo: <span id="view-cadastro" class="text-neutral-300 font-bold"></span></p>
+                <p>🔑 Senha Atual: <span id="view-senha" class="text-amber-300 font-bold tracking-wider"></span></p>
+                <p>💰 Saldo Atual: <span id="view-saldo" class="text-green-400 font-bold"></span> Kz</p>
+                <p>⭐ Inv. Ativo: <span id="view-investido" class="text-amber-400 font-bold"></span> Kz</p>
+                <p>✅ Convidados Ativos (Investiram): <span id="view-convidados-ativos" class="text-emerald-400 font-bold">0</span></p>
+                <p>❌ Convidados Inativos (Não Investiram): <span id="view-convidados-inativos" class="text-red-400 font-bold">0</span></p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1">
+                    <label class="block text-[8px] text-neutral-400 uppercase font-bold">Ajustar Saldo (Kz)</label>
+                    <input type="number" id="mod-saldo-val" placeholder="Valor" class="w-full px-2 py-1.5 bg-black border border-white/10 rounded-lg text-xs focus:outline-none">
+                    <div class="flex gap-1">
+                        <button onclick="modificarSaldoUser('add')" class="w-1/2 bg-green-700 text-white text-[9px] py-1 rounded font-bold uppercase">Injetar</button>
+                        <button onclick="modificarSaldoUser('sub')" class="w-1/2 bg-red-950 text-red-400 text-[9px] py-1 rounded font-bold uppercase border border-red-500/20">Retirar</button>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[8px] text-neutral-400 uppercase font-bold">Alterar Senha de Acesso</label>
+                    <input type="text" id="mod-senha-val" placeholder="Nova Senha" class="w-full px-2 py-1.5 bg-black border border-white/10 rounded-lg text-xs focus:outline-none">
+                    <button onclick="alterarSenhaUser()" class="w-full bg-amber-600 text-black text-[9px] py-1 rounded font-bold uppercase">Mudar Senha</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 border-t border-white/5 pt-2">
+                <div class="space-y-1 col-span-2">
+                    <label class="block text-[8px] text-neutral-400 uppercase font-bold">Atribuir Bónus de Rede</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="mod-bonus-val" placeholder="Valor Kz" class="flex-1 px-2 py-1.5 bg-black border border-white/10 rounded-lg text-xs focus:outline-none">
+                        <button onclick="adicionarBonusUser()" class="bg-purple-700 text-white text-[9px] px-4 rounded font-bold uppercase">Dar Bónus</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 border-t border-white/5 pt-3">
+                <button id="btn-user-lock" onclick="toggleRestricaoUser('bloqueado')" class="w-full py-2 bg-neutral-800 text-[9px] font-bold uppercase rounded-xl border border-white/10"></button>
+                <button id="btn-user-saque" onclick="toggleRestricaoUser('saqueBloqueado')" class="w-full py-2 bg-neutral-800 text-[9px] font-bold uppercase rounded-xl border border-white/10"></button>
+                <button id="btn-user-coleta" onclick="toggleRestricaoUser('coletaBloqueada')" class="w-full py-2 bg-neutral-800 text-[9px] font-bold uppercase rounded-xl border border-white/10"></button>
+                <button onclick="eliminarContaUser()" class="w-full py-2 bg-red-600 text-black text-[9px] font-black uppercase rounded-xl">❌ Eliminar Conta</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 text-center">
+            <div class="bg-neutral-900 border border-white/5 p-3 rounded-xl">
+                <span class="text-neutral-500 block text-[8px] font-black uppercase tracking-wider">Inscritos na Plataforma</span>
+                <span id="stat-total-users" class="text-white text-lg font-bold font-mono">0</span>
+            </div>
+            <div class="bg-neutral-900 border border-white/5 p-3 rounded-xl">
+                <span class="text-neutral-500 block text-[8px] font-black uppercase tracking-wider">Investidores (>= 1.000 Kz)</span>
+                <span id="stat-ativos-users" class="text-green-400 text-lg font-bold font-mono">0</span>
+            </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/5 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-amber-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Bloqueios Globais do Sistema</h3>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-neutral-300">Travar Saques Globais</span>
+                <button id="btn-lock-saque" onclick="toggleLockGeral('lockSaqueGeral')" class="px-4 py-2 bg-neutral-800 border border-white/10 text-white rounded-xl text-[10px] font-bold uppercase transition"></button>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-neutral-300">Travar Coletas Globais</span>
+                <button id="btn-lock-coleta" onclick="toggleLockGeral('lockColetaGeral')" class="px-4 py-2 bg-neutral-800 border border-white/10 text-white rounded-xl text-[10px] font-bold uppercase transition"></button>
+            </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-green-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Aprovação de Depósitos Pendentes</h3>
+            <div id="admin-lista-depositos" class="space-y-2 max-h-56 overflow-y-auto no-scrollbar"></div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-3">
+            <div class="flex flex-col gap-1.5 border-b border-white/5 pb-1.5">
+                <h3 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Histórico de Depósitos Aprovados</h3>
+                <input type="text" id="search-hist-dep" oninput="carregarPainelAdmin()" placeholder="🔍 Localizar número neste histórico..." class="w-full px-2.5 py-1.5 bg-black border border-white/10 rounded-lg text-[10px] focus:outline-none font-mono placeholder-neutral-600">
+            </div>
+            <div id="admin-historico-depositos" class="space-y-2 max-h-56 overflow-y-auto no-scrollbar text-[10px]"></div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-blue-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Aprovações de Saques (Levantamentos)</h3>
+            <div id="admin-lista-saques" class="space-y-2 max-h-56 overflow-y-auto no-scrollbar"></div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-pink-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Rendas Partilhadas no Grupo</h3>
+            <div class="space-y-2 bg-black/40 p-2 rounded-xl border border-white/5">
+                <label class="block text-[8px] text-neutral-400 uppercase font-bold">Lançar Presença Manual (Contacto)</label>
+                <div class="flex gap-2">
+                    <input type="tel" id="input-partilha-phone" maxlength="9" placeholder="9xxxxxxxx" class="flex-1 px-2.5 py-1.5 bg-black border border-white/10 rounded-lg text-xs text-white focus:outline-none font-mono">
+                    <button onclick="lancarPartilhaManual()" class="bg-pink-600 text-white text-[9px] px-3 rounded font-bold uppercase">Registar</button>
+                </div>
+            </div>
+            <div class="pt-1">
+                <input type="text" id="search-partilhas" oninput="carregarPainelAdmin()" placeholder="🔍 Localizar número nesta lista de rendas..." class="w-full px-2.5 py-1.5 bg-black border border-white/10 rounded-lg text-[10px] focus:outline-none font-mono placeholder-neutral-600 mb-2">
+                <div id="admin-lista-partilhas" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar text-[10px]"></div>
+            </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/10 p-4 rounded-2xl space-y-4">
+            <div class="flex flex-col gap-1.5 border-b border-white/5 pb-1.5">
+                <h3 class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Filtro de Contactos Cadastrados</h3>
+                <input type="text" id="search-contactos" oninput="carregarPainelAdmin()" placeholder="🔍 Localizar número em todo o cadastro..." class="w-full px-2.5 py-1.5 bg-black border border-white/10 rounded-lg text-[10px] focus:outline-none font-mono placeholder-neutral-600">
+            </div>
+            
+            <div class="space-y-1.5">
+                <span class="text-[9px] uppercase tracking-wider text-green-400 font-bold">👑 Investidores Ativos (>= 1.000 Kz)</span>
+                <div id="admin-lista-users-ativos" class="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar text-[10px]"></div>
+            </div>
+
+            <div class="space-y-1.5 border-t border-white/5 pt-3">
+                <span class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold">⚙️ Utilizadores Inativos (< 1.000 Kz)</span>
+                <div id="admin-lista-users-inativos" class="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar text-[10px]"></div>
+            </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/5 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-purple-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Histórico de Coletas Registadas (Hoje)</h3>
+            <div id="admin-lista-coletas" class="space-y-2 max-h-40 overflow-y-auto no-scrollbar text-[10px]"></div>
+        </div>
+
+        <div class="bg-neutral-900 border border-white/5 p-4 rounded-2xl space-y-3">
+            <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Investimentos Efetuados (Apenas Hoje)</h3>
+            <div id="admin-lista-investimentos" class="space-y-2 max-h-40 overflow-y-auto no-scrollbar text-[10px]"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const CODIGO_SECRETO = "ABS..943";
+        let targetUserPhone = null;
+
+        function puxarDB() {
+            let data = localStorage.getItem('db_cars_share');
+            return data ? JSON.parse(data) : { users: {}, depositos: [], saques: [], lockSaqueGeral: false, lockColetaGeral: false, coletasHoje: [], investimentosHoje: [], depositosAprovados: [], partilhasGrupo: [], dataAtualFiltro: new Date().toDateString() };
         }
 
-        const containerBotoes = document.getElementById('p-modal-botoes');
-        if(botoesCustomizados) {
-            containerBotoes.innerHTML = botoesCustomizados;
-        } else {
-            containerBotoes.innerHTML = `
-                <button class="btn-r" style="background:#475569;" onclick="fecharModalCustomizado()">Cancelar</button>
-                <button id="p-modal-btn-ok" style="background:var(--azul-notif);">Confirmar</button>
-            `;
-            document.getElementById('p-modal-btn-ok').onclick = () => {
-                let valorInput = mostrarInput ? document.getElementById('p-modal-campo').value.trim() : null;
-                acao(valorInput);
-                fecharModalCustomizado();
-            };
+        function empurrarDB(banco) {
+            localStorage.setItem('db_cars_share', JSON.stringify(banco));
+            carregarPainelAdmin();
+            if(targetUserPhone) atualizarFichaVisual(banco.users[targetUserPhone]);
         }
-        document.getElementById('p-modal').style.display = "flex";
-    }
+        function mostrarAlert(titulo, mensagem, icone = '⚠️') {
+            document.getElementById('alert-title').textContent = titulo;
+            document.getElementById('alert-message').textContent = mensagem;
+            document.getElementById('alert-icon').textContent = icone;
+            document.getElementById('custom-alert').classList.remove('hidden');
+        }
 
-    function fecharModalCustomizado() { document.getElementById('p-modal').style.display = "none"; }
+        function fecharAlert() { document.getElementById('custom-alert').classList.add('hidden'); }
+        function verComprovativo(imgSrc) { document.getElementById('img-comprovativo-full').src = imgSrc; document.getElementById('modal-comprovativo').classList.remove('hidden'); }
+        function fecharModalComprovativo() { document.getElementById('modal-comprovativo').classList.add('hidden'); document.getElementById('img-comprovativo-full').src = ""; }
 
-    function ntf(msg, color = "#3b82f6") { 
-        const n = document.getElementById('notif'); 
-        n.innerText = msg; n.style.background = color; n.classList.add('show'); 
-        setTimeout(()=>n.classList.remove('show'), 3000); 
-    }
-
-    function verImagem(src) { document.getElementById('img-full').src = src; document.getElementById('modal-img').style.display = 'flex'; }
-    function fecharModal() { document.getElementById('modal-img').style.display = 'none'; }
-
-    function verificarAcesso() {
-        if(document.getElementById('m-key').value === 'ABS..943') {
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('main-admin').style.display = 'block';
-            ntf("Acesso Concedido. Bem-vindo!");
-            carregarDados();
-        } else { ntf("ERRO: Chave ABS Incorreta!", "#ef4444"); }
-    }
-
-    function carregarDados() {
-        db.ref('users').on('value', snap => {
-            const users = snap.val() || {}; cacheUsuariosLista = users; 
-            let ti=0, tv=0, tb=0, hG='', hR='';
-            for(let t in users) {
-                ti++; 
-                let temInvEq = (users[t].inv_eq || 0) > 0;
-                let temAlgumHistoricoAtivo = false;
-                if(users[t].hR) { users[t].hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; }); }
-                if(temInvEq) { tv++; } else if(temAlgumHistoricoAtivo || (users[t].conv || 0) > 0) { tb++; }
-                
-                let dReg = users[t].dataReg || "--/--/--";
-                let vStatus = users[t].status || 'Ativo';
-                let isVerif = users[t].verificado || false;
-                
-                hG += `<tr><td>${users[t].id}</td><td>${t}</td><td>${(users[t].saldo||0).toFixed(2)}</td><td>${dReg}</td><td><span style="color:${vStatus === 'Bloqueado' ? '#ef4444' : '#22c55e'}">${vStatus}</span></td><td><span style="color:${isVerif ? '#eab308' : '#94a3b8'}; font-weight: bold;">${isVerif ? '⭐ SIM' : 'NÃO'}</span></td></tr>`;
-                if(users[t].hR) users[t].hR.forEach((r, i) => { if(r.s === 'Pendente') hR += `<tr><td>${t}</td><td>DEP</td><td>${r.v} KZ</td><td><img src="${r.img}" class="img-preview" onclick="verImagem('${r.img}')"></td><td><button class="btn-v" onclick="processar('${t}',${i},'hR','Aprovado',${r.v})">V</button> <button class="btn-r" onclick="processar('${t}',${i},'hR','Reprovado',0)">X</button></td></tr>`; });
-                if(users[t].hS) users[t].hS.forEach((s, i) => { if(s.s === 'Em processamento') hR += `<tr><td>${t}</td><td>SAQUE</td><td>${s.v} KZ</td><td>IBAN: ${s.iban||'---'}</td><td><button class="btn-v" onclick="processar('${t}',${i},'hS','Pago',0)">V</button> <button class="btn-r" onclick="processar('${t}',${i},'hS','Reprovado',0)">X</button></td></tr>`; });
+        function verificarAcessoAdmin() {
+            const val = document.getElementById('admin-pass-input').value;
+            if(val === CODIGO_SECRETO) {
+                document.getElementById('admin-auth').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                verificarViradaDeDia();
+                carregarPainelAdmin();
+            } else {
+                mostrarAlert("Acesso Recusado", "O código introduzido está incorreto.", "🔴");
             }
-            document.getElementById('tot-ins').innerText = ti; document.getElementById('tot-inv').innerText = tv; document.getElementById('tot-baixo').innerText = tb; document.getElementById('lista-geral').innerHTML = hG; document.getElementById('lista-req').innerHTML = hR;
-            renderizarTabelaPresenca();
-            if(selUser) atualizarVisualizacaoPermissoes(users[selUser]);
-        });
-    }
+        }
 
-    function mudarFiltroPresenca(tipo) {
-        filtroPresencaAtual = tipo;
-        document.getElementById('f-btn-abaixo').className = tipo === 'abaixo' ? 'btn-filtro active-f' : 'btn-filtro';
-        document.getElementById('f-btn-superior').className = tipo === 'superior' ? 'btn-filtro active-f' : 'btn-filtro';
-        renderizarTabelaPresenca();
-    }
-
-    function renderizarTabelaPresenca() {
-        let html = ''; const termoPesquisa = document.getElementById('pesquisa-presenca').value.trim().toLowerCase();
-        for (let t in cacheUsuariosLista) {
-            const u = cacheUsuariosLista[t]; let temInvEq = (u.inv_eq || 0) > 0; let temAlgumHistoricoAtivo = false;
-            if(u.hR) { u.hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; }); }
-            let pertenceAoFiltro = false; let tipoInvestimento = "0.00 KZ";
-            if (filtroPresencaAtual === 'superior' && temInvEq) { pertenceAoFiltro = true; tipoInvestimento = ">= 1000 KZ"; } 
-            else if (filtroPresencaAtual === 'abaixo' && (temAlgumHistoricoAtivo || (u.conv || 0) > 0) && !temInvEq) { pertenceAoFiltro = true; tipoInvestimento = "< 1000 KZ"; }
-
-            if (pertenceAoFiltro) {
-                const idStr = String(u.id || ''); const telStr = String(t || '');
-                if (!termoPesquisa || idStr.toLowerCase().includes(termoPesquisa) || telStr.toLowerCase().includes(termoPesquisa)) {
-                    let dataPresenca = u.dataPresenca || "Nenhuma";
-                    let btnAcao = u.dataPresenca ? `<button class="btn-r" style="padding:6px; margin:0;" onclick="marcarIndividual('${t}', false)">Desmarcar</button>` : `<button class="btn-v" style="padding:6px; margin:0;" onclick="marcarIndividual('${t}', true)">Marcar</button>`;
-                    html += `<tr><td><b>${u.id}</b></td><td>${t}</td><td><span style="color:${filtroPresencaAtual==='superior'?'var(--verde)':'var(--laranja)'}">${tipoInvestimento}</span></td><td><span class="date-badge" style="background:${u.dataPresenca?'#15803d':'#334155'}; color:white;">${dataPresenca}</span></td><td>${btnAcao}</td></tr>`;
+        function verificarViradaDeDia() {
+            let db = puxarDB();
+            const hojeStr = new Date().toDateString();
+            if (db.dataAtualFiltro !== hojeStr) {
+                db.investimentosHoje = []; db.coletasHoje = []; db.dataAtualFiltro = hojeStr;
+                for (let ph in db.users) {
+                    db.users[ph].ganhoOntem = db.users[ph].ganhoHoje; db.users[ph].ganhoHoje = 0.00; db.users[ph].jaColetouHoje = false;
                 }
+                localStorage.setItem('db_cars_share', JSON.stringify(db));
             }
         }
-        document.getElementById('lista-presencas-dinamica').innerHTML = html || `<tr><td colspan="5" style="text-align:center; color:#64748b;">Nenhum usuário encontrado neste grupo.</td></tr>`;
-    }
 
-    function filtrarTabelaPresenca() { renderizarTabelaPresenca(); }
-    function marcarIndividual(telefone, status) { let dataValor = status ? new Date().toLocaleString('pt-AO') : null; db.ref(`users/${telefone}`).update({ dataPresenca: dataValor }); }
+        function carregarPainelAdmin() {
+            let db = puxarDB();
+            if (!db.depositosAprovados) db.depositosAprovados = [];
+            if (!db.partilhasGrupo) db.partilhasGrupo = [];
 
-    function solicitarPresencaColetiva(status) {
-        abrirModalCustomizado({
-            titulo: status ? "Marcar Presença Coletiva" : "Desmarcar Presença Coletiva",
-            texto: status ? "Deseja MARCAR a presença de TODOS os usuários do grupo selecionado?" : "Deseja REMOVER a presença de TODOS os usuários do grupo selecionado?",
-            botoesCustomizados: `
-                <button class="btn-r" style="background:#475569;" onclick="fecharModalCustomizado()">Cancelar</button>
-                <button class="btn-v" style="background:${status?'var(--verde)':'var(--vermelho)'};" onclick="executarPresencaColetiva(${status})">${status?'Marcar':'Remover'}</button>
-            `
-        });
-    }
+            const fHistDep = document.getElementById('search-hist-dep').value.trim();
+            const fPartilhas = document.getElementById('search-partilhas').value.trim();
+            const fContactos = document.getElementById('search-contactos').value.trim();
 
-    function ejecutarPresencaColetiva(status) {
-        let dataValor = status ? new Date().toLocaleString('pt-AO') : null; let updates = {}; let totalModificados = 0;
-        for (let t in cacheUsuariosLista) {
-            const u = cacheUsuariosLista[t]; let temInvEq = (u.inv_eq || 0) > 0; let temAlgumHistoricoAtivo = false;
-            if(u.hR) { u.hR.forEach(r => { if(r.s === 'Aprovado') temAlgumHistoricoAtivo = true; }); }
-            let pertenceAoFiltro = false;
-            if (filtroPresencaAtual === 'superior' && temInvEq) pertenceAoFiltro = true;
-            if (filtroPresencaAtual === 'abaixo' && (temAlgumHistoricoAtivo || (u.conv || 0) > 0) && !temInvEq) pertenceAoFiltro = true;
-            if (pertenceAoFiltro) { updates[`users/${t}/dataPresenca`] = dataValor; totalModificados++; }
-        }
-        if (totalModificados > 0) { db.ref().update(updates).then(() => { ntf(`Ação coletiva aplicada em ${totalModificados} contas!`, status ? "var(--verde)" : "var(--vermelho)"); fecharModalCustomizado(); }); }
-    }
+            document.getElementById('stat-total-users').textContent = Object.keys(db.users).length;
+            document.getElementById('stat-ativos-users').textContent = Object.values(db.users).filter(u => u.investido >= 1000).length;
 
-    function atualizarVisualizacaoPermissoes(u) {
-        let pSaque = u.podeSaque !== false; let pComissao = u.podeComissao !== false;
-        document.getElementById('u-perm-saque').innerText = pSaque ? "PERMITIDO" : "BLOQUEADO";
-        document.getElementById('u-perm-saque').style.color = pSaque ? "var(--verde)" : "var(--vermelho)";
-        document.getElementById('u-perm-comissao').innerText = pComissao ? "PERMITIDO" : "BLOQUEADO";
-        document.getElementById('u-perm-comissao').style.color = pComissao ? "var(--verde)" : "var(--vermelho)";
-    }
+            document.getElementById('btn-lock-saque').textContent = db.lockSaqueGeral ? "🔒 Bloqueado" : "🔓 Permitido";
+            document.getElementById('btn-lock-saque').className = db.lockSaqueGeral ? "px-4 py-2 bg-red-950/40 border border-red-500/30 text-red-400 rounded-xl text-[10px] font-bold uppercase transition" : "px-4 py-2 bg-green-950/40 border border-green-500/30 text-green-400 rounded-xl text-[10px] font-bold uppercase transition";
+            document.getElementById('btn-lock-coleta').textContent = db.lockColetaGeral ? "🔒 Bloqueado" : "🔓 Permitido";
+            document.getElementById('btn-lock-coleta').className = db.lockColetaGeral ? "px-4 py-2 bg-red-950/40 border border-red-500/30 text-red-400 rounded-xl text-[10px] font-bold uppercase transition" : "px-4 py-2 bg-green-950/40 border border-green-500/30 text-green-400 rounded-xl text-[10px] font-bold uppercase transition";
 
-    // NOVA FUNÇÃO CORRIGIDA DE ESCOLHA ALVO INDIVIDUAL (Com interface limpa de decisão)
-    function abrirModalPermissaoIndividual(campo) {
-        if(!selUser) {
-            ntf("ERRO: Escolha primeiro o usuário pelo ID ou Contacto!", "var(--vermelho)");
-            return;
-        }
-        let nomeRecurso = campo === 'podeSaque' ? "SAQUE" : "COLETA DE COMISSÃO";
-        
-        abrirModalCustomizado({
-            titulo: `Configurar Alvo Individual: ${nomeRecurso}`,
-            texto: `Selecione a ação desejada para a conta alvo (${selUser}):`,
-            botoesCustomizados: `
-                <button class="btn-r" onclick="executarPermissaoIndividual('${campo}', false)">BLOQUEAR</button>
-                <button class="btn-v" onclick="executarPermissaoIndividual('${campo}', true)">PERMITIR</button>
-            `
-        });
-    }
-
-    function executarPermissaoIndividual(campo, estado) {
-        let objUpdate = {}; objUpdate[campo] = estado;
-        db.ref(`users/${selUser}`).update(objUpdate).then(() => {
-            ntf("Permissão do usuário atualizada com sucesso!", estado ? "var(--verde)" : "var(--vermelho)");
-            fecharModalCustomizado();
-            buscarUser();
-        });
-    }
-
-    // COLETIVA INDEPENDENTE (Sem precisar escolher usuário)
-    function solicitarPermissaoColetiva(campo, status) {
-        let acaoTexto = status ? "PERMITIR" : "BLOQUEAR";
-        let funcionalidade = campo === 'podeSaque' ? "SAQUES" : "COLETA DE COMISSÕES";
-        abrirModalCustomizado({
-            titulo: "Alteração Global Coletiva",
-            texto: `Tens certeza que desejas ${acaoTexto} globalmente os ${funcionalidade} para todos os cadastros simultaneamente?`,
-            botoesCustomizados: `
-                <button class="btn-r" style="background:#475569;" onclick="fecharModalCustomizado()">Cancelar</button>
-                <button class="btn-v" style="background:${status?'var(--verde)':'var(--vermelho)'};" onclick="executarPermissaoColetiva('${campo}', ${status})">${acaoTexto} TODOS</button>
-            `
-        });
-    }
-
-    function executarPermissaoColetiva(campo, status) {
-        let updates = {}; let total = 0;
-        for(let t in cacheUsuariosLista) { updates[`users/${t}/${campo}`] = status; total++; }
-        if(total > 0) { db.ref().update(updates).then(() => { ntf(`Sucesso global aplicado para ${total} usuários.`, status ? "var(--verde)" : "var(--vermelho)"); fecharModalCustomizado(); }); }
-    }
-
-    function buscarUser() {
-        const q = document.getElementById('q-user').value.trim(); if(!q) return;
-        db.ref('users').once('value', s => {
-            const data = s.val(); let achou = false; let telefoneEncontrado = "";
-            for(let t in data) { if(t === q || data[t].id == q) { achou = true; telefoneEncontrado = t; break; } }
-            if(achou) {
-                selUser = telefoneEncontrado; const u = data[telefoneEncontrado]; selUserStatus = u.status || "Ativo"; let isVerificado = u.verificado || false;
-                let contagemInscritosRede = 0; for(let t in data) { if(data[t].padrinho === telefoneEncontrado) { contagemInscritosRede++; } }
-                document.getElementById('u-tel').innerText = telefoneEncontrado; document.getElementById('u-id').innerText = u.id; document.getElementById('u-data').innerText = u.dataReg || "Não registrada";
-                document.getElementById('u-ins').innerText = contagemInscritosRede; document.getElementById('u-inv').innerText = u.inv_eq || 0; 
-                document.getElementById('u-pass').innerText = u.pass; document.getElementById('u-status').innerText = selUserStatus; document.getElementById('u-status').style.color = selUserStatus === "Bloqueado" ? "#ef4444" : "#22c55e";
-                document.getElementById('u-verif').innerText = isVerificado ? "SIM (Membro Ativo)" : "NÃO"; document.getElementById('u-verif').style.color = isVerificado ? "#eab308" : "#94a3b8";
-                document.getElementById('u-saldo').innerText = (u.saldo||0).toFixed(2) + " KZ";
-                document.getElementById('lock-btn').innerText = selUserStatus === "Bloqueado" ? "DESBLOQUEAR AGORA" : "BLOQUEAR USUÁRIO";
-                document.getElementById('lock-btn').className = selUserStatus === "Bloqueado" ? "btn-v" : "btn-b";
-                atualizarVisualizacaoPermissoes(u);
-                document.getElementById('user-box').style.display = 'block'; ntf("Usuário Localizado!");
-            } else { ntf("ERRO: Usuário não encontrado!", "#ef4444"); }
-        });
-    }
-
-    function abrirModalSaldo(tipo) {
-        if(!selUser) return;
-        abrirModalCustomizado({
-            titulo: tipo === 'add' ? "Adicionar Saldo" : "Remover Saldo",
-            texto: `Insira o valor em Kwanza (KZ) para a conta (${selUser}):`,
-            mostrarInput: true, placeholderInput: "Ex: 2500",
-            acao: (valor) => {
-                let v = parseFloat(valor); if(isNaN(v) || v <= 0) { ntf("Valor inválido!", "var(--vermelho)"); return; }
-                db.ref(`users/${selUser}`).once('value', snap => {
-                    let u = snap.val() || {}; let atual = u.saldo || 0;
-                    let novo = tipo === 'add' ? atual + v : atual - v;
-                    db.ref(`users/${selUser}`).update({ saldo: novo, saldoReal: novo }).then(() => { ntf("Saldo Atualizado!", "var(--verde)"); buscarUser(); });
-                });
+            const boxDep = document.getElementById('admin-lista-depositos');
+            if(db.depositos.length === 0) { boxDep.innerHTML = "<div class='text-neutral-600 text-[10px] text-center py-2'>Sem depósitos pendentes</div>"; }
+            else {
+                boxDep.innerHTML = db.depositos.map(d => `
+                    <div class="bg-black p-3 rounded-xl border border-white/5 space-y-2">
+                        <div class="flex justify-between items-center text-[10px]"><span>📞 User: <b>${d.user}</b></span><span class="text-green-400 font-mono font-bold">+${d.valor.toFixed(2)} Kz</span></div>
+                        <div onclick="verComprovativo('${d.img}')" class="w-full max-h-36 overflow-hidden rounded-lg border border-white/10 cursor-pointer"><img src="${d.img}" class="w-full h-full object-contain bg-neutral-950"></div>
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="processarDeposito(${d.id}, '${d.user}', ${d.valor}, true)" class="w-1/2 bg-green-600 text-black py-1 rounded-lg text-[9px] font-bold uppercase">Aprovar</button>
+                            <button onclick="processarDeposito(${d.id}, '${d.user}', ${d.valor}, false)" class="w-1/2 bg-neutral-800 text-red-400 py-1 rounded-lg text-[9px] font-bold uppercase">Rejeitar</button>
+                        </div>
+                    </div>
+                `).join('');
             }
-        });
-    }
 
-    function abrirModalSenha() {
-        if(!selUser) return;
-        abrirModalCustomizado({
-            titulo: "Editar Senha da Conta",
-            texto: "Defina o novo código de acesso do utilizador:",
-            mostrarInput: true, placeholderInput: "Senha",
-            acao: (novaSenha) => {
-                if(!novaSenha) { ntf("Senha inválida!", "var(--vermelho)"); return; }
-                db.ref(`users/${selUser}`).update({pass: novaSenha}).then(()=>{ ntf("Nova Senha Configurada!"); buscarUser(); });
+            const boxHistDep = document.getElementById('admin-historico-depositos');
+            let filtradosHistDep = db.depositosAprovados.filter(h => h.user.includes(fHistDep));
+            if(filtradosHistDep.length === 0) { boxHistDep.innerHTML = "<div class='text-neutral-600 text-center py-2'>Nenhum resultado encontrado.</div>"; }
+            else {
+                boxHistDep.innerHTML = filtradosHistDep.map(h => `
+                    <div class="p-2 bg-black rounded border border-emerald-500/10 flex justify-between items-center font-mono text-[9px]">
+                        <span>📞 <b>${h.user}</b></span><span class="text-neutral-500">${h.data}</span><span class="text-green-400 font-bold">+${h.valor.toFixed(2)} Kz</span>
+                    </div>
+                `).reverse().join('');
             }
-        });
-    }
 
-    function solicitarDeletar() {
-        if(!selUser) return;
-        abrirModalCustomizado({
-            titulo: "Aviso Crítico de Exclusão",
-            texto: "Apagar permanentemente todos os dados desta conta do banco de dados?",
-            botoesCustomizados: `
-                <button class="btn-b" onclick="fecharModalCustomizado()">Cancelar</button>
-                <button class="btn-r" onclick="executarDeletar()">Apagar Definitivamente</button>
-            `
-        });
-    }
+            const boxSaq = document.getElementById('admin-lista-saques');
+            if(db.saques.length === 0) { boxSaq.innerHTML = "<div class='text-neutral-600 text-[10px] text-center py-2'>Sem solicitações de saque</div>"; }
+            else {
+                boxSaq.innerHTML = db.saques.map(s => `
+                    <div class="bg-black p-3 rounded-xl border border-white/5 space-y-1">
+                        <div class="flex justify-between items-center text-[10px]"><span>📞 User: <b>${s.user}</b></span><span class="text-blue-400 font-mono font-bold">-${s.valor.toFixed(2)} Kz</span></div>
+                        <div class="bg-neutral-950 p-2 rounded border border-white/5 text-[10px] font-mono text-amber-400">IBAN: ${s.iban}</div>
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="processarSaque(${s.id}, '${s.user}', ${s.valor}, true)" class="w-1/2 bg-blue-600 text-white py-1 rounded-lg text-[9px] font-bold uppercase">Aprovar</button>
+                            <button onclick="processarSaque(${s.id}, '${s.user}', ${s.valor}, false)" class="w-1/2 bg-neutral-800 text-red-400 py-1 rounded-lg text-[9px] font-bold uppercase">Rejeitar</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
 
-    function executarDeletar() {
-        db.ref(`users/${selUser}`).remove().then(()=>{ document.getElementById('user-box').style.display='none'; selUser = null; ntf("Conta Removida!", "var(--vermelho)"); fecharModalCustomizado(); });
-    }
+            const boxPartilhas = document.getElementById('admin-lista-partilhas');
+            let filtradasPartilhas = db.partilhasGrupo.filter(p => p.user.includes(fPartilhas));
+            if(filtradasPartilhas.length === 0) { boxPartilhas.innerHTML = "<div class='text-neutral-600 text-center py-2'>Nenhum resultado encontrado.</div>"; }
+            else {
+                boxPartilhas.innerHTML = filtradasPartilhas.map((p, index) => `
+                    <div class="p-2 bg-black rounded border border-pink-500/10 flex justify-between items-center font-mono">
+                        <span>📢 <b>${p.user}</b></span><span class="text-neutral-500 text-[8px]">${p.data}</span>
+                        <button onclick="removerPartilhaManual(${index})" class="text-red-500 font-bold px-1.5 py-0.5 bg-white/5 rounded border border-white/5">✕</button>
+                    </div>
+                `).reverse().join('');
+            }
 
-    function alterarVerificacao(estado) { if(!selUser) return; db.ref(`users/${selUser}`).update({ verificado: estado }).then(() => { buscarUser(); }); }
-    function toggleBloqueio() { if(!selUser) return; let novoStatus = selUserStatus === "Bloqueado" ? "Ativo" : "Bloqueado"; db.ref(`users/${selUser}`).update({status: novoStatus}).then(()=>{ buscarUser(); }); }
-    function processar(t, i, pasta, status, val) { db.ref(`users/${t}`).once('value', s => { let u = s.val(); if(!u[pasta] || !u[pasta][i]) return; u[pasta][i].s = status; let updates = {}; updates[`users/${t}/${pasta}`] = u[pasta]; if(status === 'Aprovado') { updates[`users/${t}/saldo`] = (u.saldo || 0) + val; updates[`users/${t}/saldoReal`] = (u.saldoReal || u.saldo || 0) + val; } db.ref().update(updates); }); }
-</script>
+            let listaUsersArray = Object.values(db.users).filter(u => u.phone.includes(fContactos));
+            const boxAtivos = document.getElementById('admin-lista-users-ativos');
+            const boxInativos = document.getElementById('admin-lista-users-inativos');
+
+            let ativosHTML = listaUsersArray.filter(u => u.investido >= 1000).map(u => `
+                <div class='p-2 bg-black rounded border border-green-500/10 flex justify-between items-center font-mono'>
+                    <span>📞 <b>${u.phone}</b></span><span class='text-green-400 font-bold'>Inv: ${u.investido.toFixed(0)} Kz</span><span class='text-amber-500'>Saldo: ${u.saldo.toFixed(0)} Kz</span>
+                </div>
+            `).join('');
+
+            let inativosHTML = listaUsersArray.filter(u => u.investido < 1000).map(u => `
+                <div class='p-2 bg-black rounded border border-white/5 flex justify-between items-center font-mono'>
+                    <span>📞 <b>${u.phone}</b></span><span class='text-neutral-500'>Inv: ${u.investido.toFixed(0)} Kz</span><span class='text-neutral-400'>Saldo: ${u.saldo.toFixed(0)} Kz</span>
+                </div>
+            `).join('');
+
+            boxAtivos.innerHTML = ativosHTML === "" ? "<div class='text-neutral-600 text-center py-1 font-sans'>Nenhum utilizador ativo encontrado</div>" : ativosHTML;
+            boxInativos.innerHTML = inativosHTML === "" ? "<div class='text-neutral-600 text-center py-1 font-sans'>Nenhum utilizador inativo encontrado</div>" : inativosHTML;
+
+            document.getElementById('admin-lista-coletas').innerHTML = db.coletasHoje.length === 0 ? "<div class='text-neutral-600 text-center py-1'>Nenhuma coleta registada hoje.</div>" : db.coletasHoje.map(c => `<div class='p-1.5 bg-black rounded border border-white/5 flex justify-between font-mono'><span>📞 ${c.phone}</span><span class='text-purple-400'>+${c.ganho.toFixed(2)} Kz</span></div>`).join('');
+            document.getElementById('admin-lista-investimentos').innerHTML = db.investimentosHoje.length === 0 ? "<div class='text-neutral-600 text-center py-1'>Nenhum investimento registado hoje.</div>" : db.investimentosHoje.map(i => `<div class='p-1.5 bg-black rounded border border-white/5 flex justify-between font-mono'><span>📞 ${i.phone}</span><span class='text-emerald-400'>${i.valor} Kz</span></div>`).join('');
+        }
+
+        function lancarPartilhaManual() {
+            const phone = document.getElementById('input-partilha-phone').value.trim();
+            if(phone.length < 9) { mostrarAlert("Erro", "Insira um número válido.", "🔴"); return; }
+            let db = puxarDB();
+            if(!db.users[phone]) { mostrarAlert("Inexistente", "O número +244 " + phone + " não está cadastrado.", "🔴"); return; }
+
+            let agora = new Date();
+            let dataFormatada = agora.getDate() + '/' + (agora.getMonth() + 1) + ' ' + agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            db.partilhasGrupo.push({ user: phone, data: dataFormatada });
+            document.getElementById('input-partilha-phone').value = ""; empurrarDB(db);
+            mostrarAlert("Sucesso", "Presença registada para " + phone, "🟢");
+        }
+
+        function removerPartilhaManual(indexCorreto) {
+            let db = puxarDB();
+            let indexReal = db.partilhasGrupo.length - 1 - indexCorreto;
+            if(db.partilhasGrupo[indexReal]) { db.partilhasGrupo.splice(indexReal, 1); empurrarDB(db); }
+        }
+
+        function toggleLockGeral(chave) { let db = puxarDB(); db[chave] = !db[chave]; empurrarDB(db); }
+
+        function processarDeposito(id, phone, valor, statusAprovado) {
+            let db = puxarDB();
+            if(statusAprovado) { 
+                let agora = new Date();
+                let dataFormatada = agora.getDate() + '/' + (agora.getMonth() + 1) + ' ' + agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+                if(db.users[phone]) {
+                    db.users[phone].saldo += valor;
+                    if(!db.users[phone].historico) db.users[phone].historico = [];
+                    db.users[phone].historico.push(`[${dataFormatada}] Depósito Aprovado: +${valor.toFixed(2)} Kz`);
+                }
+                db.depositosAprovados.push({ user: phone, valor: valor, data: dataFormatada });
+            }
+            db.depositos = db.depositos.filter(d => d.id !== id); empurrarDB(db);
+        }
+
+        function processarSaque(id, phone, valor, statusAprovado) {
+            let db = puxarDB(); if(!statusAprovado && db.users[phone]) db.users[phone].saldo += valor;
+            db.saques = db.saques.filter(s => s.id !== id); empurrarDB(db);
+        }
+
+        function pesquisarUtilizador() {
+            const phone = document.getElementById('search-phone').value.trim();
+            let db = puxarDB();
+            if(!db.users[phone]) { mostrarAlert("Inexistente", "Nenhuma conta encontrada com este número.", "🔴"); return; }
+            targetUserPhone = phone; atualizarFichaVisual(db.users[phone]);
+            document.getElementById('user-profile-modal').classList.remove('hidden');
+        }
+
+        function atualizarFichaVisual(user) {
+            let db = puxarDB();
+            document.getElementById('view-phone').textContent = "+244 " + user.phone;
+            document.getElementById('view-cadastro').textContent = user.dataRegisto || "Não Registada";
+            document.getElementById('view-senha').textContent = user.password || "---";
+            document.getElementById('view-saldo').textContent = user.saldo.toFixed(2);
+            document.getElementById('view-investido').textContent = user.investido.toFixed(2);
+            
+            let convidadosDoUser = Object.values(db.users).filter(u => u.indicadoPor === user.phone || u.convidou === user.phone);
+            document.getElementById('view-convidados-ativos').textContent = convidadosDoUser.filter(u => u.investido >= 1000).length;
+            document.getElementById('view-convidados-inativos').textContent = convidadosDoUser.filter(u => u.investido < 1000).length;
+
+            const bLock = document.getElementById('btn-user-lock'), bSaq = document.getElementById('btn-user-saque'), bCol = document.getElementById('btn-user-coleta');
+            bLock.textContent = user.bloqueado ? "🔒 Conta Suspensa" : "🔓 Acesso Livre";
+            bLock.className = user.bloqueado ? "w-full py-2 bg-red-950/40 text-red-400 text-[9px] font-bold uppercase rounded-xl border border-red-500/20" : "w-full py-2 bg-neutral-800 text-white text-[9px] font-bold uppercase rounded-xl border border-white/10";
+            bSaq.textContent = user.saqueBloqueado ? "🔒 Saque Travado" : "🔓 Saque Ativo";
+            bSaq.className = user.saqueBloqueado ? "w-full py-2 bg-red-950/40 text-red-400 text-[9px] font-bold uppercase rounded-xl border border-red-500/20" : "w-full py-2 bg-neutral-800 text-white text-[9px] font-bold uppercase rounded-xl border border-white/10";
+            bCol.textContent = user.coletaBloqueada ? "🔒 Coleta Travada" : "🔓 Coleta Ativa";
+            bCol.className = user.coletaBloqueada ? "w-full py-2 bg-red-950/40 text-red-400 text-[9px] font-bold uppercase rounded-xl border border-red-500/20" : "w-full py-2 bg-neutral-800 text-white text-[9px] font-bold uppercase rounded-xl border border-white/10";
+        }
+
+        function modificarSaldoUser(operacao) {
+            const val = parseFloat(document.getElementById('mod-saldo-val').value);
+            if(isNaN(val) || val <= 0) return;
+            let db = puxarDB(); let agora = new Date();
+            let dataFormatada = agora.getDate() + '/' + (agora.getMonth() + 1) + ' ' + agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            if(!db.users[targetUserPhone].historico) db.users[targetUserPhone].historico = [];
+
+            if(operacao === 'add') {
+                db.users[targetUserPhone].saldo += val;
+                db.users[targetUserPhone].historico.push(`[${dataFormatada}] [ADMIN] Crédito de Saldo: +${val.toFixed(2)} Kz`);
+            } else {
+                db.users[targetUserPhone].saldo = Math.max(0, db.users[targetUserPhone].saldo - val);
+                db.users[targetUserPhone].historico.push(`[${dataFormatada}] [ADMIN] Débito de Saldo: -${val.toFixed(2)} Kz`);
+            }
+            document.getElementById('mod-saldo-val').value = ""; empurrarDB(db);
+        }
+
+        function alterarSenhaUser() {
+            const novaSenha = document.getElementById('mod-senha-val').value.trim();
+            if(novaSenha === "") return;
+            let db = puxarDB(); db.users[targetUserPhone].password = novaSenha;
+            document.getElementById('mod-senha-val').value = ""; empurrarDB(db);
+        }
+
+        function adicionarBonusUser() {
+            const val = parseFloat(document.getElementById('mod-bonus-val').value);
+            if(isNaN(val) || val <= 0) return;
+            let db = puxarDB(); let agora = new Date();
+            let dataFormatada = agora.getDate() + '/' + (agora.getMonth() + 1) + ' ' + agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            db.users[targetUserPhone].saldo += val; db.users[targetUserPhone].ganhoTotal += val;
+            if(!db.users[targetUserPhone].historico) db.users[targetUserPhone].historico = [];
+            db.users[targetUserPhone].historico.push(`[${dataFormatada}] [ADMIN] Bónus de Rede Extra: +${val.toFixed(2)} Kz`);
+            document.getElementById('mod-bonus-val').value = ""; empurrarDB(db);
+        }
+
+        function toggleRestricaoUser(campo) { let db = puxarDB(); db.users[targetUserPhone][campo] = !db.users[targetUserPhone][campo]; empurrarDB(db); }
+        function eliminarContaUser() { let db = puxarDB(); delete db.users[targetUserPhone]; document.getElementById('user-profile-modal').classList.add('hidden'); targetUserPhone = null; empurrarDB(db); }
+        function fecharFicha() { document.getElementById('user-profile-modal').classList.add('hidden'); targetUserPhone = null; }
+    </script>
 </body>
 </html>
